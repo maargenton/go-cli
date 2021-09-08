@@ -54,8 +54,8 @@ func (options *sercatCmd) Complete(opt *option.T, partial string) []option.Descr
 
 func (options *sercatCmd) Run() error {
 
-	// The following options use pointer type to allow getting value from
-	// configuration file if not set. Manually set defaults here.
+	// The following options use pointer type to allow getting fallback values
+	// from a configuration file if not set. Manually set defaults here.
 	if options.Baudrate == nil {
 		var v uint32 = 115200
 		options.Baudrate = &v

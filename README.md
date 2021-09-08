@@ -2,19 +2,21 @@
 
 A library to define command line interfaces in Go.
 
-[![GoDoc](
-    https://godoc.org/github.com/maargenton/go-cli?status.svg)](
-    https://godoc.org/github.com/maargenton/go-cli)
-[![Build Status](
-    https://travis-ci.org/maargenton/go-cli.svg?branch=master)](
-    https://travis-ci.org/maargenton/go-cli)
-[![codecov](
-    https://codecov.io/gh/maargenton/go-cli/branch/master/graph/badge.svg)](
-    https://codecov.io/gh/maargenton/go-cli)
+[![Latest](
+  https://img.shields.io/github/v/tag/maargenton/go-cli?color=blue&label=latest&logo=go&logoColor=white&sort=semver)](
+  https://pkg.go.dev/github.com/maargenton/go-cli)
+[![Build](
+  https://img.shields.io/github/workflow/status/maargenton/go-cli/build?label=build&logo=github&logoColor=aaaaaa)](
+  https://github.com/maargenton/go-cli/actions?query=branch%3Amaster)
+[![Codecov](
+  https://img.shields.io/codecov/c/github/maargenton/go-cli?label=codecov&logo=codecov&logoColor=aaaaaa&token=fVZ3ZMAgfo)](
+  https://codecov.io/gh/maargenton/go-cli)
 [![Go Report Card](
-    https://goreportcard.com/badge/github.com/maargenton/go-cli)](
-    https://goreportcard.com/report/github.com/maargenton/go-cli)
+  https://goreportcard.com/badge/github.com/maargenton/go-cli)](
+  https://goreportcard.com/report/github.com/maargenton/go-cli)
 
+
+---------------------------
 
 Package `go-cli` provides a declarative way to define full featured command-line
 interfaces. It follows the POSIX/GNU-style guidelines and supports custom bash
@@ -37,11 +39,6 @@ The implementation of go-clo follows the conventions outlined in [The Open Group
 
 ```bash
 go get github.com/maargenton/go-cli
-```
-A collection of various example commands using go-cli can be found at
-
-```bash
-git clone git@github.com:maargenton/go-cli-examples
 ```
 
 ## Usage
@@ -66,29 +63,35 @@ func (options *cmd) Run() error {
 }
 
 func main() {
-    cli.Run(os.Args, &cli.Command{
+    cli.Run(&cli.Command{
         Handler:     &cmd{},
         Description: "...",
     })
 }
 ```
 
-The `cmd` type defines a collection of options for command being defined. The
-main function parses command-line arguments and invokes `cmd.Run()` with all
-the fields initialized inside the `options`.
+The `cmd` type is a struct that will capture all the options and arguments
+passed on the command line. The main function defines a command referring to the
+`cmd` type, and through `cli.Run()` parses the command-line arguments and
+environment variable to configure the command before calling `cmd.Run()`.
 
-The `opts` tag defines, in a comma separated list:
+### Struct tags
+
+The details of the command-line interface are defined on the struct with `opts`
+struct tags, containing a comma separated list of the following:
 - `-b,--baudrate`: either or both of a short and long flag name for the option
 - `arg:<n>` : captures a positional argument
 - `args` : captures all remaining arguments
 - `default` : a default value for the field if not specified on the command-line
 - `env` : the name of an environment variable that can override the default
-- `sep`: a separator for fields that can accept multiple values. By
-  default, multiple values must be specified by repeating the option flag multiple times.
+- `sep`: a separator for fields that can accept multiple values. By default,
+  multiple values must be specified by repeating the option flag multiple times.
 - `name`: the display name for the value, used when printing out description of
   the field.
 
-A separate `desc` tag contains the description for the option.
+A separate `desc` struct tag contains the description for the option.
+
+### Supported field types
 
 Fields in the command options struct can be:
 - any parsable value type
@@ -116,3 +119,27 @@ In a command-line interface, all option flags are optional. Required options
 should use positional arguments. Positional arguments are required unless
 defined with a pointer type, and only if all subsequent positional arguments are
 also optional.
+
+### Optional command behavior
+
+Every command struct must define a `Run() error` function to comply with the
+`cli.Handler` interface. The struct can also define additional methods to
+support specific behaviors:
+
+- `Version() string`, if defined, adds a `-v, --verions` option that print the
+  command version returned by thise function
+- `Usage(name string, width int) string`, if defined, let the command completely
+  redefine the usage printout triggered by `-h, --help` option
+- `Complete(opt *option.T, partial string) []option.Description`, if defined,
+  let the command override the list of suggestions offered during completion of
+  an option or an argument. By default, the completion mechanism emulates the
+  default behavior of bash completion and suggests any matching local file
+
+### Completion support
+
+Completion integration with bash is supported by running:
+```
+eval $(<command> --bash-completion-script)
+```
+Once setup, bash will invoke the command to get completion suggestions, with two
+special environment variables set, `COMP_WORD` and `COMP_INDEX`.
