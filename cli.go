@@ -17,22 +17,28 @@ import (
 type Command = cli.Command
 
 // Description describes one completion option
-type Description = option.Description
+type Suggestion = option.Description
+
+// SimpleSuggestionList generate a list of Suggestion objects with no
+// description from a list of strings
+func SimpleSuggestionList(options ...string) []Suggestion {
+	var r = make([]option.Description, 0, len(options))
+	for _, o := range options {
+		r = append(r, option.Description{Option: o})
+	}
+	return r
+}
 
 // DefaultCompletion acts like the shell default completion and suggests file
 // and folder names under the current directory. It is used by default when the
 // command does not implement a specific completion handler, and should be used
 // from the command completion handler when no other completion logic is
 // suitable.
-func DefaultCompletion(w string) []Description {
-	return cli.DefaultCompletion(w)
-}
+var DefaultCompletion = cli.DefaultCompletion
 
 // FilepathCompletion implements a custom filepath completion scheme, matching
 // the provided pattern if possible.
-func FilepathCompletion(pattern string, w string) []Description {
-	return cli.FilepathCompletion(pattern, w)
-}
+var FilepathCompletion = cli.FilepathCompletion
 
 // Run takes the command line arguments, parses them and execute the
 // command or sub-command with the corresponding options.

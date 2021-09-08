@@ -1,8 +1,0 @@
-default:
-  port: /dev/tty.usbserial-*
-  baudrate: 230400
-  format: 8N1
-
-/dev/tty.usbserial-*:
-  baudrate: 230400
-  format: 8N1
