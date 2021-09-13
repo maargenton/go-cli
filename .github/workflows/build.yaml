@@ -39,8 +39,8 @@ jobs:
         if: matrix.os != 'windows-latest'
         uses: codecov/codecov-action@v2
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          # token: ${{ secrets.CODECOV_TOKEN }}
+          # fail_ci_if_error: true
           verbose: true
-          fail_ci_if_error: true
           flags: unittests
           file: coverage.txt
