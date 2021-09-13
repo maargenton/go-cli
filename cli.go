@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 
+	"github.com/maargenton/go-fileutils"
 	"golang.org/x/term"
 
 	"github.com/maargenton/go-cli/pkg/cli"
@@ -43,7 +43,7 @@ var FilepathCompletion = cli.FilepathCompletion
 // Run takes the command line arguments, parses them and execute the
 // command or sub-command with the corresponding options.
 func Run(cmd *Command) {
-	cmd.ProcessName = filepath.Base(os.Args[0])
+	cmd.ProcessName = fileutils.Base(os.Args[0])
 	cmd.ProcessArgs = os.Args
 	cmd.ConsoleWidth = consoleWidth()
 	cmd.SetProcessEnv(os.Environ())
