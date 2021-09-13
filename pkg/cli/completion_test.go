@@ -1,7 +1,6 @@
 package cli_test
 
 import (
-	"path/filepath"
 	"testing"
 
 	"github.com/maargenton/go-testpredicate/pkg/require"
@@ -66,11 +65,11 @@ func TestDefaultCompletion(t *testing.T) {
 			})
 		})
 		t.Run("when Calling DefaultCompletion() with partial unique folder name", func(t *testing.T) {
-			suggestions := cli.DefaultCompletion(filepath.FromSlash("../cl"))
+			suggestions := cli.DefaultCompletion("../cl")
 			t.Run("then suggestions include the files in that folder", func(t *testing.T) {
 				require.That(t, suggestions).Field("Option").IsSupersetOf([]string{
-					filepath.FromSlash("../cli/completion.go"),
-					filepath.FromSlash("../cli/completion_test.go"),
+					"../cli/completion.go",
+					"../cli/completion_test.go",
 				})
 			})
 		})
