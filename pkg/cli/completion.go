@@ -2,12 +2,13 @@ package cli
 
 import (
 	"fmt"
-	"path/filepath"
 	"strconv"
 	"strings"
 
-	"github.com/maargenton/go-cli/pkg/option"
+	"github.com/maargenton/go-fileutils"
 	"github.com/maargenton/go-fileutils/pkg/dir"
+
+	"github.com/maargenton/go-cli/pkg/option"
 )
 
 // BashCompletionScript returns a string containing the bash script necessary to
@@ -50,7 +51,7 @@ func DefaultCompletion(w string) []option.Description {
 	var r []option.Description
 	files, err := dir.Glob(fmt.Sprintf("%v*", w))
 	if err == nil {
-		if len(files) == 1 && strings.HasSuffix(files[0], string(filepath.Separator)) {
+		if len(files) == 1 && strings.HasSuffix(files[0], string(fileutils.Separator)) {
 			return DefaultCompletion(files[0])
 		}
 		for _, f := range files {

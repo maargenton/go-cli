@@ -133,7 +133,7 @@ support specific behaviors:
 - `Complete(opt *option.T, partial string) []option.Description`, if defined,
   let the command override the list of suggestions offered during completion of
   an option or an argument. By default, the completion mechanism emulates the
-  default behavior of bash completion and suggests any matching local file
+  default behavior of bash completion and suggests matching local files.
 
 ### Completion support
 
