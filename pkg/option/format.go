@@ -5,6 +5,9 @@ import (
 	"strings"
 )
 
+// FormatOptionDescription takes a list of option descriptions and returns a
+// formatted string with all the options and descriptions layed out within the
+// given width, aligning descriptions and line wraps.
 func FormatOptionDescription(prefix string, width int, options []Description) string {
 	var s strings.Builder
 
@@ -39,7 +42,7 @@ func lineWrap(str string, w int) (lines []string) {
 	for ws != we {
 		if we-ls > w || b {
 			lines = append(lines, str[ls:le])
-			ls, le = ws, we
+			ls = ws
 		}
 		le = we
 		b, ws, we = nextWordRange(str, we)
@@ -72,6 +75,9 @@ func nextWordRange(s string, ii int) (b bool, i, j int) {
 	return
 }
 
+// FormatCompletion takes a list of completion suggestions with description, and
+// returns a formatted string layed out within the given width. Long
+// descriptions are truncated to a single line with ellipsis if needed.
 func FormatCompletion(width int, options []Description) string {
 	var s strings.Builder
 

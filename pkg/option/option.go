@@ -9,14 +9,19 @@ import (
 	"github.com/maargenton/go-cli/pkg/value"
 )
 
-type OptionType int
+// Type describes the type of option encoded in an `option.T` as either a
+// `Value` that expect a value, a `Bool` that does not take a value, a
+// `Ptr` which can be optional, a `Slice` that accept multiple values,
+// or a `Special` that precludes the use of any other option.
+type Type int
 
+// Contant values for Type
 const (
-	ValueType OptionType = iota
-	BoolType
-	PtrType
-	SliceType
-	SpecialType
+	Value Type = iota
+	Bool
+	Ptr
+	Slice
+	Special
 )
 
 // T represents a single option with a reference back to the OptionSet it
@@ -36,7 +41,7 @@ type T struct {
 	Index      []int
 	FieldType  reflect.Type
 	ValueType  reflect.Type
-	Type       OptionType
+	Type       Type
 	Optional   bool
 	SpecialErr error
 
@@ -97,8 +102,8 @@ func (opt *T) GetUsage() (usage Description) {
 	}
 }
 
-// GetCompletion returns a value similar to GetUsage(), but using only the long
-// flag if defined, the short flag otherwise.
+// GetCompletionUsage returns a value similar to GetUsage(), but using only the
+// long flag if defined, the short flag otherwise.
 func (opt *T) GetCompletionUsage() (usage Description) {
 	var u strings.Builder
 	if opt.Long != "" {
@@ -121,7 +126,7 @@ func (opt *T) GetCompletionUsage() (usage Description) {
 }
 
 func (opt *T) getValueDescription() string {
-	if opt.Type == BoolType || opt.Type == SpecialType {
+	if opt.Type == Bool || opt.Type == Special {
 		return ""
 	}
 	if opt.ValueName != "" {
@@ -152,7 +157,7 @@ func (opt *T) getDescription() string {
 
 // SetBool is a special setter usable only on boolean flags to set them to true.
 func (opt *T) SetBool() {
-	if opt.Type != BoolType {
+	if opt.Type != Bool {
 		panic("cannot call Option.SetBool() on non-bool fields")
 	}
 

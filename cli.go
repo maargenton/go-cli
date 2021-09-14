@@ -16,7 +16,8 @@ import (
 // be handled.
 type Command = cli.Command
 
-// Description describes one completion option
+// Suggestion is an alias of `option.Description` used to describe one
+// suggestions in the context of a completion request.
 type Suggestion = option.Description
 
 // SimpleSuggestionList generate a list of Suggestion objects with no
