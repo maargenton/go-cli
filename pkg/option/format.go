@@ -42,7 +42,7 @@ func lineWrap(str string, w int) (lines []string) {
 	for ws != we {
 		if we-ls > w || b {
 			lines = append(lines, str[ls:le])
-			ls, le = ws, we
+			ls = ws
 		}
 		le = we
 		b, ws, we = nextWordRange(str, we)
