@@ -164,7 +164,7 @@ func TestCommandUsage(t *testing.T) {
 		type myCmd2 struct {
 			myCmd
 			Port  string   `opts:"arg:1, name:port"     desc:"port to open"`
-			Port2 *string  `opts:"arg:2, name:aux-port" desc:"auxillary port"`
+			Port2 *string  `opts:"arg:2, name:aux-port" desc:"auxiliary port"`
 			Ports []string `opts:"args"                 desc:"additional ports to open"`
 		}
 
