@@ -14,6 +14,11 @@ type Completion struct {
 	ArgValues []Description
 }
 
+// GetCompletion evaluate the list of command line arguments `args` in the
+// context of the receiver, and determines a list of completion suggestions for
+// the `partial` argument given. The result is a partially filled `Completion`
+// object with either a list of `Options` or one of `Opt` or `Arg` set the the
+// `option.T` whose value ned to be completee.
 func (opts *Set) GetCompletion(args []string, partial string) Completion {
 
 	var suggestions Completion
@@ -63,11 +68,10 @@ func (opts *Set) GetCompletion(args []string, partial string) Completion {
 	var nonExclusiveUsed = len(remainingArgs) > 0
 	for o := range usedOptions {
 		if o.Type == SpecialType {
-			// Exclusive flag has been used nothin more to suggest
+			// Exclusive flag has been used, nothing more to suggest
 			return suggestions
-		} else {
-			nonExclusiveUsed = true
 		}
+		nonExclusiveUsed = true
 	}
 	for _, o := range opts.Options {
 		if _, used := usedOptions[o]; !used || o.Type == SliceType {

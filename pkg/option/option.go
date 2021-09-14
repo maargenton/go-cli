@@ -9,8 +9,13 @@ import (
 	"github.com/maargenton/go-cli/pkg/value"
 )
 
+// OptionType describes the type of option encoded in an `option.T` as either a
+// `ValueType` that expect a value, a `BoolType` that does not take a value, a
+// `PtrType` which can be optional, a `SliceType` that accept multiple values,
+// or a `SpecialType` that precludes the use of any other option.
 type OptionType int
 
+// Contant values for OptionType
 const (
 	ValueType OptionType = iota
 	BoolType
@@ -97,8 +102,8 @@ func (opt *T) GetUsage() (usage Description) {
 	}
 }
 
-// GetCompletion returns a value similar to GetUsage(), but using only the long
-// flag if defined, the short flag otherwise.
+// GetCompletionUsage returns a value similar to GetUsage(), but using only the
+// long flag if defined, the short flag otherwise.
 func (opt *T) GetCompletionUsage() (usage Description) {
 	var u strings.Builder
 	if opt.Long != "" {

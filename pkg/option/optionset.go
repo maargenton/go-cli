@@ -37,9 +37,9 @@ func NewOptionSet(v interface{}) (*Set, error) {
 	return opts, nil
 }
 
-// Option return the option matching the specified name, which can be the short
-// or the long name of the flag, without any leading dash. Returns nil is no
-// matching flag is found.
+// GetOption return the option matching the specified name, which can be the
+// short or the long name of the flag, without any leading dash. Returns nil is
+// no matching flag is found.
 func (opts *Set) GetOption(name string) (opt *T) {
 	if name != "" {
 		for _, opt := range opts.Options {
