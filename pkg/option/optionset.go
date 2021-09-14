@@ -71,7 +71,7 @@ func (opts *Set) AddSpecialFlag(short, long, desc string, err error) {
 		Short:       short,
 		Long:        long,
 		Description: desc,
-		Type:        SpecialType,
+		Type:        Special,
 		SpecialErr:  err,
 
 		opts: opts,
@@ -167,10 +167,10 @@ func (opts *Set) applyArgsToOptions(args []string) (
 			if opt == nil {
 				return nil, nil, &ErrInvalidFlag{arg}
 			}
-			if opt.Type == SpecialType {
+			if opt.Type == Special {
 				return nil, nil, opt.SpecialErr
 			}
-			if opt.Type == BoolType {
+			if opt.Type == Bool {
 				opt.SetBool()
 				opt = nil
 			}
@@ -181,10 +181,10 @@ func (opts *Set) applyArgsToOptions(args []string) (
 				if opt == nil {
 					return nil, nil, &ErrInvalidFlag{"-" + string(c)}
 				}
-				if opt.Type == SpecialType {
+				if opt.Type == Special {
 					return nil, nil, opt.SpecialErr
 				}
-				if opt.Type == BoolType {
+				if opt.Type == Bool {
 					opt.SetBool()
 					opt = nil
 				} else {
@@ -266,14 +266,14 @@ func (opts *Set) parseStruct() error {
 	}
 	opts.Options = compact
 
-	if opts.Args != nil && opts.Args.Type != SliceType {
+	if opts.Args != nil && opts.Args.Type != Slice {
 		return fmt.Errorf(
 			"field '%v' of type '%v' must be a slice to receive additional arguments",
 			opts.Args.Name(), opts.Args.FieldType)
 	}
 
 	for _, arg := range opts.Positional {
-		if arg.Type == SliceType {
+		if arg.Type == Slice {
 			return fmt.Errorf(
 				"field '%v' of type '%v' cannot be a slice to receive positional argument",
 				arg.Name(), arg.FieldType)
@@ -335,13 +335,13 @@ func (opts *Set) parseField(f reflect.StructField, index []int) error {
 
 		}
 
-		var optionType = ValueType
+		var optionType = Value
 		if fieldType.Kind() == reflect.Slice {
-			optionType = SliceType
+			optionType = Slice
 		} else if valueType.Kind() == reflect.Bool {
-			optionType = BoolType
+			optionType = Bool
 		} else if fieldType.Kind() == reflect.Ptr {
-			optionType = PtrType
+			optionType = Ptr
 		}
 
 		var opt = &T{

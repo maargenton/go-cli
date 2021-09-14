@@ -34,7 +34,7 @@ func (opts *Set) GetCompletion(args []string, partial string) Completion {
 			opt = opts.GetOption(arg[2:])
 			if opt != nil {
 				usedOptions[opt] = struct{}{}
-				if opt.Type == BoolType || opt.Type == SpecialType {
+				if opt.Type == Bool || opt.Type == Special {
 					opt = nil // no value expected
 				}
 			}
@@ -44,7 +44,7 @@ func (opts *Set) GetCompletion(args []string, partial string) Completion {
 				opt = opts.GetOption(string(c))
 				if opt != nil {
 					usedOptions[opt] = struct{}{}
-					if opt.Type == BoolType || opt.Type == SpecialType {
+					if opt.Type == Bool || opt.Type == Special {
 						opt = nil // no value expected
 					} else {
 						value := arg[i+1:]
@@ -67,15 +67,15 @@ func (opts *Set) GetCompletion(args []string, partial string) Completion {
 
 	var nonExclusiveUsed = len(remainingArgs) > 0
 	for o := range usedOptions {
-		if o.Type == SpecialType {
+		if o.Type == Special {
 			// Exclusive flag has been used, nothing more to suggest
 			return suggestions
 		}
 		nonExclusiveUsed = true
 	}
 	for _, o := range opts.Options {
-		if _, used := usedOptions[o]; !used || o.Type == SliceType {
-			if o.Type == SpecialType && nonExclusiveUsed {
+		if _, used := usedOptions[o]; !used || o.Type == Slice {
+			if o.Type == Special && nonExclusiveUsed {
 				// Non-exclusive flag has been used, skip special flags
 				continue
 			}

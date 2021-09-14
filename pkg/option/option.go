@@ -9,19 +9,19 @@ import (
 	"github.com/maargenton/go-cli/pkg/value"
 )
 
-// OptionType describes the type of option encoded in an `option.T` as either a
-// `ValueType` that expect a value, a `BoolType` that does not take a value, a
-// `PtrType` which can be optional, a `SliceType` that accept multiple values,
-// or a `SpecialType` that precludes the use of any other option.
-type OptionType int
+// Type describes the type of option encoded in an `option.T` as either a
+// `Value` that expect a value, a `Bool` that does not take a value, a
+// `Ptr` which can be optional, a `Slice` that accept multiple values,
+// or a `Special` that precludes the use of any other option.
+type Type int
 
-// Contant values for OptionType
+// Contant values for Type
 const (
-	ValueType OptionType = iota
-	BoolType
-	PtrType
-	SliceType
-	SpecialType
+	Value Type = iota
+	Bool
+	Ptr
+	Slice
+	Special
 )
 
 // T represents a single option with a reference back to the OptionSet it
@@ -41,7 +41,7 @@ type T struct {
 	Index      []int
 	FieldType  reflect.Type
 	ValueType  reflect.Type
-	Type       OptionType
+	Type       Type
 	Optional   bool
 	SpecialErr error
 
@@ -126,7 +126,7 @@ func (opt *T) GetCompletionUsage() (usage Description) {
 }
 
 func (opt *T) getValueDescription() string {
-	if opt.Type == BoolType || opt.Type == SpecialType {
+	if opt.Type == Bool || opt.Type == Special {
 		return ""
 	}
 	if opt.ValueName != "" {
@@ -157,7 +157,7 @@ func (opt *T) getDescription() string {
 
 // SetBool is a special setter usable only on boolean flags to set them to true.
 func (opt *T) SetBool() {
-	if opt.Type != BoolType {
+	if opt.Type != Bool {
 		panic("cannot call Option.SetBool() on non-bool fields")
 	}
 
