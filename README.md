@@ -65,7 +65,7 @@ arguments as non-option. Even when a `--` delimiter is present, all non-option
 arguments appearing either before or after the delimiter are assigned to
 positional arguments first, then to the remaining arguments variable.
 
-Non-option arguments generate an error if there is not a field to capture them
+Non-option arguments generate an error if there is no field to capture them
 in the command options struct.
 
 ### Limitation
