@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/maargenton/go-errors"
+	"github.com/maargenton/go-testpredicate/pkg/bdd"
 	"github.com/maargenton/go-testpredicate/pkg/require"
 
 	"github.com/maargenton/go-cli/pkg/option"
@@ -456,6 +457,43 @@ func TestApplyArgsLongFlags(t *testing.T) {
 			require.That(t, cmd).Eq(tc.cmd)
 		})
 	}
+}
+
+func TestApplyArgs_Delimiter(t *testing.T) {
+	type command struct {
+		A bool     `opts:"-a, --aaa"`
+		D string   `opts:"-d, --duration"`
+		L []string `opts:"args"`
+	}
+
+	bdd.Given(t, "a struct with args field", func(t *bdd.T) {
+		var cmd command
+		optionSet, err := option.NewOptionSet(&cmd)
+		require.That(t, err).IsNil()
+
+		t.When("arguments contain `--`", func(t *bdd.T) {
+			var args = []string{"--duration", "1m", "--", "--aaa"}
+
+			t.Then("remaining flags are not parsed", func(t *bdd.T) {
+				err = optionSet.ApplyArgs(args)
+				require.That(t, err).IsNil()
+				require.That(t, cmd.A).IsFalse()
+				require.That(t, cmd.L).Eq([]string{"--aaa"})
+			})
+		})
+
+		t.When("option value is `--`", func(t *bdd.T) {
+			var args = []string{"--duration", "--", "1m", "--aaa"}
+
+			t.Then("remaining flags are parsed", func(t *bdd.T) {
+				err = optionSet.ApplyArgs(args)
+				require.That(t, err).IsNil()
+				require.That(t, cmd.A).IsTrue()
+				require.That(t, cmd.D).Eq("--")
+				require.That(t, cmd.L).Eq([]string{"1m"})
+			})
+		})
+	})
 }
 
 func TestApplyArgs_Errors(t *testing.T) {

@@ -156,12 +156,16 @@ func (opts *Set) applyArgsToOptions(
 	args []string) (
 	opt *T, remainingArgs []string, err error) {
 
-	for _, arg := range args {
+	for i, arg := range args {
 		if opt != nil {
 			if err := opt.SetValue(arg); err != nil {
 				return nil, nil, err
 			}
 			opt = nil
+
+		} else if arg == "--" {
+			remainingArgs = append(remainingArgs, args[i+1:]...)
+			return
 
 		} else if strings.HasPrefix(arg, "--") {
 			optName := arg[2:]
