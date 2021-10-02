@@ -165,9 +165,9 @@ func (opts *Set) applyArgsToOptions(
 
 		} else if strings.HasPrefix(arg, "--") {
 			optName := arg[2:]
-			value := ""
+			valuePart := ""
 			if i := strings.IndexByte(optName, '='); i >= 0 {
-				value = optName[i+1:]
+				valuePart = optName[i:]
 				optName = optName[:i]
 			}
 			opt = opts.GetOption(optName)
@@ -177,12 +177,12 @@ func (opts *Set) applyArgsToOptions(
 			if opt.Type == Special {
 				return nil, nil, opt.SpecialErr
 			}
-			if opt.Type == Bool && value == "" {
+			if opt.Type == Bool && valuePart == "" {
 				opt.SetBool()
 				opt = nil
 			}
-			if value != "" {
-				if err := opt.SetValue(value); err != nil {
+			if valuePart != "" {
+				if err := opt.SetValue(valuePart[1:]); err != nil {
 					return nil, nil, err
 				}
 				opt = nil
