@@ -28,7 +28,7 @@ specific struct-tags, and the command itself is defined by a `Run()` method
 attached to that struct.
 
 
-## Standards
+## Features
 
 The implementation of go-clo follows the conventions outlined in [The Open Group
     Base Specifications Issue 7, 2018 edition, Chapter 12. Utility
@@ -56,20 +56,29 @@ Boolean long flags do not accept a value unless attached with an `=` sign;
 `--bool-flag=false` is the only way to set a boolean flag with a default value
 of true back to false.
 
+### Positional and addition arguments
+
+Non-option arguments can be captures as either positional arguments or
+additional arguments; additional arguments must be be backed by a slice type. A
+special delimiter `--` marks the end of option flags and capture the remaining
+arguments as non-option. Even when a `--` delimiter is present, all non-option
+arguments appearing either before or after the delimiter are assigned to
+positional arguments first, then to the remaining arguments variable.
+
+Non-option arguments generate an error if there is not a field to capture them
+in the command options struct.
 
 ### Limitation
 
-- Each flag can appear only once unless it is backed by an slice type
-- The order in which the flags are specified on the command line cannot be
-  retrieved after parsing (except for flags backed by a slice type in which
+- Each option flag can appear only once unless it is backed by an slice type.
+- The order in which arguments are specified on the command line cannot be
+  retrieved after parsing (except for arguments backed by a slice type in which
   values are stored in order).
-- All flags and non-flags argument are handled independently of their position
-  on the command-line, so you cannot have different flag values attached to
-  different arguments. For example, the following hypothetical compiler command
-  cannot be handled by go-cli: `cc -O2 foo.cpp -O0 bar.ccp`
-- `--` to force all remaining arguments to be handled as non flags is not
-  supported in the current version, but should be soon.
-- `-vvvv` to e.g. increase verbosity to level 4 is ***not supported***
+- All option and non-option arguments are handled independently of their
+  position on the command-line, so you cannot have different flag values
+  attached to different arguments. For example, the following hypothetical
+  compiler command cannot be handled by go-cli: `cc -O2 foo.cpp -O0 bar.ccp`.
+- `-vvvv` to e.g. increase verbosity to level 4 is ***not supported***.
 
 
 ## Installation
