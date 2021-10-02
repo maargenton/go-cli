@@ -1,3 +1,17 @@
+# v0.3.0
+
+## Major Features
+
+- Add support for `--long=<value>` format
+- Add support for empty value in `--long=<value>` format
+- Add support for `--` end of options delimiter
+
+## Improvements
+
+- Improve reported errors from `value.Parse()`
+- Update documentation with details about short flags, long flags, non-option
+  arguments and limitations
+
 # v0.2.0
 
 ## Major Features
