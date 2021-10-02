@@ -58,15 +58,15 @@ of true back to false.
 
 ### Positional and addition arguments
 
-Non-option arguments can be captures as either positional arguments or
-additional arguments; additional arguments must be be backed by a slice type. A
-special delimiter `--` marks the end of option flags and capture the remaining
-arguments as non-option. Even when a `--` delimiter is present, all non-option
-arguments appearing either before or after the delimiter are assigned to
-positional arguments first, then to the remaining arguments variable.
+All non-option command-line arguments must be captured by a field in the command
+options struct, otherwise an error is generated. Non-option arguments can be
+captures as either positional arguments or additional arguments; additional
+arguments must be be backed by a slice type.
 
-Non-option arguments generate an error if there is no field to capture them
-in the command options struct.
+A special delimiter `--` marks the end of option flags and capture the remaining
+arguments as non-option, assigned to positional and additional arguments fields.
+Note that after parsing, it is not possible to determine if arguments were
+specified before or after a `--` delimiter.
 
 ### Limitation
 
