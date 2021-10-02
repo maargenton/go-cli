@@ -441,6 +441,7 @@ func TestApplyArgsLongFlags(t *testing.T) {
 		cmd  command
 	}{
 		{[]string{"--aaa", "--ccc", "--file", "abc"}, command{A: true, C: true, F: "abc"}},
+		{[]string{"--aaa=false", "--ccc", "--file=abc"}, command{A: false, C: true, F: "abc"}},
 	}
 
 	for _, tc := range tcs {
@@ -468,9 +469,10 @@ func TestApplyArgs_Errors(t *testing.T) {
 	}{
 		{[]string{"--aaa", "--ddd"}, "invalid flag"},
 		{[]string{"-abgc"}, "invalid flag"},
-		{[]string{"-d4p"}, "failed to parse value"},
-		{[]string{"-d", "4p"}, "failed to parse value"},
-		{[]string{"--duration", "4p"}, "failed to parse value"},
+		{[]string{"-d4p"}, "invalid value"},
+		{[]string{"-d", "4p"}, "invalid value"},
+		{[]string{"--duration", "4p"}, "invalid value"},
+		{[]string{"--duration=4p"}, "invalid value"},
 		{[]string{"a", "--duration"}, "missing argument"},
 	}
 

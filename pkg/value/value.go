@@ -71,8 +71,8 @@ func Parse(v interface{}, s string) error {
 			r, err := f.call(s)
 			if err != nil {
 				return fmt.Errorf(
-					"failed to parse value for type '%v': %w",
-					valueType, err)
+					"invalid value '%v' for type '%v': %w",
+					s, valueType, err)
 			}
 			vv.Elem().Set(reflect.ValueOf(r))
 			return nil
@@ -93,8 +93,8 @@ func Parse(v interface{}, s string) error {
 
 	if err != nil {
 		err = fmt.Errorf(
-			"failed to parse value for type '%v': %w",
-			valueType, err)
+			"invalid value '%v' for type '%v': %w",
+			s, valueType, err)
 	}
 	return err
 }

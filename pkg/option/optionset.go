@@ -152,7 +152,8 @@ func (opts *Set) ApplyArgs(args []string) error {
 	return nil
 }
 
-func (opts *Set) applyArgsToOptions(args []string) (
+func (opts *Set) applyArgsToOptions(
+	args []string) (
 	opt *T, remainingArgs []string, err error) {
 
 	for _, arg := range args {
@@ -163,15 +164,27 @@ func (opts *Set) applyArgsToOptions(args []string) (
 			opt = nil
 
 		} else if strings.HasPrefix(arg, "--") {
-			opt = opts.GetOption(arg[2:])
+			optName := arg[2:]
+			value := ""
+			if i := strings.IndexByte(optName, '='); i >= 0 {
+				value = optName[i+1:]
+				optName = optName[:i]
+			}
+			opt = opts.GetOption(optName)
 			if opt == nil {
 				return nil, nil, &ErrInvalidFlag{arg}
 			}
 			if opt.Type == Special {
 				return nil, nil, opt.SpecialErr
 			}
-			if opt.Type == Bool {
+			if opt.Type == Bool && value == "" {
 				opt.SetBool()
+				opt = nil
+			}
+			if value != "" {
+				if err := opt.SetValue(value); err != nil {
+					return nil, nil, err
+				}
 				opt = nil
 			}
 		} else if strings.HasPrefix(arg, "-") {
