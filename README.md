@@ -172,8 +172,8 @@ Every command struct must define a `Run() error` function to comply with the
 `cli.Handler` interface. The struct can also define additional methods to
 support specific behaviors:
 
-- `Version() string`, if defined, adds a `-v, --verions` option that print the
-  command version returned by thise function
+- `Version() string`, if defined, adds a `-v, --version` option that print the
+  command version returned by this function
 - `Usage(name string, width int) string`, if defined, let the command completely
   redefine the usage printout triggered by `-h, --help` option
 - `Complete(opt *option.T, partial string) []option.Description`, if defined,
