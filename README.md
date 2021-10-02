@@ -34,6 +34,43 @@ The implementation of go-clo follows the conventions outlined in [The Open Group
     Base Specifications Issue 7, 2018 edition, Chapter 12. Utility
     Conventions](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap12.html)
 
+### Short flags support
+
+If a command defines `-c`, `-v` and `-z` as boolean flags and `-f` as a string
+option, then:
+- `-cvz` is equivalent to `-c -v -z`
+- `-cvzf foo` is equivalent to `-c -v -z -f foo`
+- `-cvzffoo` is equivalent to `-c -v -z -f foo`
+- `-cffoovz` is equivalent to `-c -f foovz`
+
+### Long flags support
+
+Long flags always start with a `--` and can accept value either inline after an
+`=` sign, or as the next argument.
+
+- `--filename foo`
+- `--filename=foo`
+- `--filename=` specifies an empty filename
+
+Boolean long flags do not accept a value unless attached with an `=` sign;
+`--bool-flag=false` is the only way to set a boolean flag with a default value
+of true back to false.
+
+
+### Limitation
+
+- Each flag can appear only once unless it is backed by an slice type
+- The order in which the flags are specified on the command line cannot be
+  retrieved after parsing (except for flags backed by a slice type in which
+  values are stored in order).
+- All flags and non-flags argument are handled independently of their position
+  on the command-line, so you cannot have different flag values attached to
+  different arguments. For example, the following hypothetical compiler command
+  cannot be handled by go-cli: `cc -O2 foo.cpp -O0 bar.ccp`
+- `--` to force all remaining arguments to be handled as non flags is not
+  supported in the current version, but should be soon.
+- `-vvvv` to e.g. increase verbosity to level 4 is ***not supported***
+
 
 ## Installation
 
