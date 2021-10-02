@@ -28,11 +28,57 @@ specific struct-tags, and the command itself is defined by a `Run()` method
 attached to that struct.
 
 
-## Standards
+## Features
 
 The implementation of go-clo follows the conventions outlined in [The Open Group
     Base Specifications Issue 7, 2018 edition, Chapter 12. Utility
     Conventions](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap12.html)
+
+### Short flags support
+
+If a command defines `-c`, `-v` and `-z` as boolean flags and `-f` as a string
+option, then:
+- `-cvz` is equivalent to `-c -v -z`
+- `-cvzf foo` is equivalent to `-c -v -z -f foo`
+- `-cvzffoo` is equivalent to `-c -v -z -f foo`
+- `-cffoovz` is equivalent to `-c -f foovz`
+
+### Long flags support
+
+Long flags always start with a `--` and can accept value either inline after an
+`=` sign, or as the next argument.
+
+- `--filename foo`
+- `--filename=foo`
+- `--filename=` specifies an empty filename
+
+Boolean long flags do not accept a value unless attached with an `=` sign;
+`--bool-flag=false` is the only way to set a boolean flag with a default value
+of true back to false.
+
+### Positional and addition arguments
+
+All non-option command-line arguments must be captured by a field in the command
+options struct, otherwise an error is generated. Non-option arguments can be
+captures as either positional arguments or additional arguments; additional
+arguments must be be backed by a slice type.
+
+A special delimiter `--` marks the end of option flags and capture the remaining
+arguments as non-option, assigned to positional and additional arguments fields.
+Note that after parsing, it is not possible to determine if arguments were
+specified before or after a `--` delimiter.
+
+### Limitation
+
+- Each option flag can appear only once unless it is backed by an slice type.
+- The order in which arguments are specified on the command line cannot be
+  retrieved after parsing (except for arguments backed by a slice type in which
+  values are stored in order).
+- All option and non-option arguments are handled independently of their
+  position on the command-line, so you cannot have different flag values
+  attached to different arguments. For example, the following hypothetical
+  compiler command cannot be handled by go-cli: `cc -O2 foo.cpp -O0 bar.ccp`.
+- `-vvvv` to e.g. increase verbosity to level 4 is ***not supported***.
 
 
 ## Installation
@@ -126,8 +172,8 @@ Every command struct must define a `Run() error` function to comply with the
 `cli.Handler` interface. The struct can also define additional methods to
 support specific behaviors:
 
-- `Version() string`, if defined, adds a `-v, --verions` option that print the
-  command version returned by thise function
+- `Version() string`, if defined, adds a `-v, --version` option that print the
+  command version returned by this function
 - `Usage(name string, width int) string`, if defined, let the command completely
   redefine the usage printout triggered by `-h, --help` option
 - `Complete(opt *option.T, partial string) []option.Description`, if defined,

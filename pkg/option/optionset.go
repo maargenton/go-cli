@@ -152,26 +152,43 @@ func (opts *Set) ApplyArgs(args []string) error {
 	return nil
 }
 
-func (opts *Set) applyArgsToOptions(args []string) (
+func (opts *Set) applyArgsToOptions(
+	args []string) (
 	opt *T, remainingArgs []string, err error) {
 
-	for _, arg := range args {
+	for i, arg := range args {
 		if opt != nil {
 			if err := opt.SetValue(arg); err != nil {
 				return nil, nil, err
 			}
 			opt = nil
 
+		} else if arg == "--" {
+			remainingArgs = append(remainingArgs, args[i+1:]...)
+			return
+
 		} else if strings.HasPrefix(arg, "--") {
-			opt = opts.GetOption(arg[2:])
+			optName := arg[2:]
+			valuePart := ""
+			if i := strings.IndexByte(optName, '='); i >= 0 {
+				valuePart = optName[i:]
+				optName = optName[:i]
+			}
+			opt = opts.GetOption(optName)
 			if opt == nil {
 				return nil, nil, &ErrInvalidFlag{arg}
 			}
 			if opt.Type == Special {
 				return nil, nil, opt.SpecialErr
 			}
-			if opt.Type == Bool {
+			if opt.Type == Bool && valuePart == "" {
 				opt.SetBool()
+				opt = nil
+			}
+			if valuePart != "" {
+				if err := opt.SetValue(valuePart[1:]); err != nil {
+					return nil, nil, err
+				}
 				opt = nil
 			}
 		} else if strings.HasPrefix(arg, "-") {
