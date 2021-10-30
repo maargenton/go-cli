@@ -74,7 +74,7 @@ func TestCommandRun(t *testing.T) {
 			})
 		})
 
-		t.Run("when the command handlerreturns an error", func(t *testing.T) {
+		t.Run("when the command handler returns an error", func(t *testing.T) {
 			cmd.ProcessArgs = []string{"command-name", "-v", "--arg", "123"}
 			c.err = fmt.Errorf("myError")
 			err := cmd.Run()

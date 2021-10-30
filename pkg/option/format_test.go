@@ -49,7 +49,7 @@ func TestFormatOptionDescription(t *testing.T) {
 		t.Run("when calling FormatOptionDescription()", func(t *testing.T) {
 			var lines = lines(option.FormatOptionDescription("__", 50, usage))
 
-			t.Run("then descriptions is wrapped and aligned accros multiple lines", func(t *testing.T) {
+			t.Run("then descriptions is wrapped and aligned across multiple lines", func(t *testing.T) {
 				require.That(t, lines[0]).StartsWith("__-p, --port <value> : ")
 				require.That(t, lines[1:]).All(
 					subexpr.Value().StartsWith("                       "))
