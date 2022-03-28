@@ -17,10 +17,11 @@ type Command struct {
 	Handler     Handler
 	Description string
 
-	ProcessName  string
-	ProcessArgs  []string
-	ProcessEnv   map[string]string
-	ConsoleWidth int
+	ProcessName       string
+	ProcessArgs       []string
+	ProcessEnv        map[string]string
+	ConsoleWidth      int
+	DisableCompletion bool
 
 	Suggestions []option.Description
 
@@ -91,17 +92,18 @@ func (cmd *Command) Run() error {
 		"h", "help", "display usage information",
 		ErrHelpRequested)
 
-	cmd.opts.AddSpecialFlag(
-		"", "bash-completion-script",
-		"generate a bash script that sets up completion for this command; "+
-			"to use, run the following line or add it to your .bash_profile:\n"+
-			"eval $("+cmd.ProcessName+" --bash-completion-script)",
-		ErrCompletionScriptRequested)
+	if !cmd.DisableCompletion {
+		cmd.opts.AddSpecialFlag(
+			"", "bash-completion-script",
+			"generate a bash script that sets up completion for this command; "+
+				"to use, run the following line or add it to your .bash_profile:\n"+
+				"eval $("+cmd.ProcessName+" --bash-completion-script)",
+			ErrCompletionScriptRequested)
 
-	if cmd.handleCompletionRequest() {
-		return ErrCompletionRequested
+		if cmd.handleCompletionRequest() {
+			return ErrCompletionRequested
+		}
 	}
-
 	if err := cmd.opts.ApplyDefaults(); err != nil {
 		return err
 	}
