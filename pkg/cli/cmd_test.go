@@ -165,7 +165,7 @@ func TestCommandUsage(t *testing.T) {
 			myCmd
 			Port  string   `opts:"arg:1, name:port"     desc:"port to open"`
 			Port2 *string  `opts:"arg:2, name:aux-port" desc:"auxiliary port"`
-			Ports []string `opts:"args"                 desc:"additional ports to open"`
+			Ports []string `opts:"args,  name:ports"    desc:"additional ports to open"`
 		}
 
 		var cmd = &cli.Command{
@@ -184,7 +184,7 @@ func TestCommandUsage(t *testing.T) {
 				require.That(t, usage[1]).Contains("command description")
 				require.That(t, usage[2]).Contains("<port>")
 				require.That(t, usage[3]).Contains("<aux-port>")
-				require.That(t, usage[4]).Contains("<value>")
+				require.That(t, usage[4]).Contains("<ports>...")
 				require.That(t, usage[5]).Contains("--verbose")
 				require.That(t, usage[6]).Contains("TEST_ARG")
 			})

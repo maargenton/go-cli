@@ -68,7 +68,7 @@ func (opt *T) Name() string {
 		if opt.ValueName != "" {
 			return fmt.Sprintf("<%v>", opt.ValueName)
 		}
-		return fmt.Sprintf("<arg[%d]>", opt.Position)
+		return fmt.Sprintf("<arg%d>", opt.Position)
 	}
 	if opt.Long == "" {
 		return fmt.Sprintf("-%v", opt.Short)
@@ -81,19 +81,23 @@ func (opt *T) Name() string {
 func (opt *T) GetUsage() (usage Description) {
 
 	var u strings.Builder
-	if opt.Short != "" && opt.Long != "" {
-		fmt.Fprintf(&u, "-%v, --%v", opt.Short, opt.Long)
-	} else if opt.Short != "" {
-		fmt.Fprintf(&u, "-%v", opt.Short)
-	} else if opt.Long != "" {
-		fmt.Fprintf(&u, "    --%v", opt.Long)
-	}
-
-	if v := opt.getValueDescription(); v != "" {
-		if u.Len() > 0 {
-			u.WriteRune(' ')
+	if opt.Position != 0 || opt.Args {
+		fmt.Fprintf(&u, "%v", opt.Name())
+	} else {
+		if opt.Short != "" && opt.Long != "" {
+			fmt.Fprintf(&u, "-%v, --%v", opt.Short, opt.Long)
+		} else if opt.Short != "" {
+			fmt.Fprintf(&u, "-%v", opt.Short)
+		} else if opt.Long != "" {
+			fmt.Fprintf(&u, "    --%v", opt.Long)
 		}
-		u.WriteString(v)
+
+		if v := opt.getValueDescription(); v != "" {
+			if u.Len() > 0 {
+				u.WriteRune(' ')
+			}
+			u.WriteString(v)
+		}
 	}
 
 	return Description{
