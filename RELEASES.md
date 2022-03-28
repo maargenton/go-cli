@@ -1,13 +1,14 @@
 # v0.3.1
 
-## Improvements
+## Major Features
 
+- Bump minimum Go version requirement to v1.17 due to dependencies
 - Preserve preset `cmd.ProcessName` and `cmd.ProcessArgs` if set before invoking
   `cli.Run()`
 - Add option to disable completion machinery
 - Improve usage display for positional arguments
 
-## Other changes
+## Improvements
 
 - Fix typos in test names
 - Update dependencies
