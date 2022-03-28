@@ -44,8 +44,12 @@ var FilepathCompletion = cli.FilepathCompletion
 // Run takes the command line arguments, parses them and execute the
 // command or sub-command with the corresponding options.
 func Run(cmd *Command) {
-	cmd.ProcessName = fileutils.Base(os.Args[0])
-	cmd.ProcessArgs = os.Args
+	if cmd.ProcessName == "" {
+		cmd.ProcessName = fileutils.Base(os.Args[0])
+	}
+	if cmd.ProcessArgs == nil {
+		cmd.ProcessArgs = os.Args
+	}
 	cmd.ConsoleWidth = consoleWidth()
 	cmd.SetProcessEnv(os.Environ())
 
