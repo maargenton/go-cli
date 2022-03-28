@@ -1,3 +1,19 @@
+# v0.3.1
+
+## Improvements
+
+- Preserve preset `cmd.ProcessName` and `cmd.ProcessArgs` if set before invoking
+  `cli.Run()`
+- Add option to disable completion machinery
+- Improve usage display for positional arguments
+
+## Other changes
+
+- Fix typos in test names
+- Update dependencies
+- Add vscode debug configuration
+
+
 # v0.3.0
 
 ## Major Features
