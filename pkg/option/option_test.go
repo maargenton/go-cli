@@ -60,7 +60,7 @@ func TestOptionName(t *testing.T) {
 			require.That(t, option).IsNotNil()
 
 			t.Run("the name includes the argument position", func(t *testing.T) {
-				require.That(t, option.Name()).Eq("<arg[2]>")
+				require.That(t, option.Name()).Eq("<arg2>")
 			})
 		})
 		t.Run("when getting the name of an extra arguments field", func(t *testing.T) {
@@ -106,7 +106,7 @@ func TestOptionDescriptionUsage(t *testing.T) {
 		usage string
 	}{
 		{
-			name: "an Option{} with short and long",
+			name: "an Option with short and long",
 			opt: option.T{
 				Short: "p",
 				Long:  "port",
@@ -114,21 +114,21 @@ func TestOptionDescriptionUsage(t *testing.T) {
 			usage: "-p, --port <value>",
 		},
 		{
-			name: "an Option{} with short only",
+			name: "an Option with short only",
 			opt: option.T{
 				Short: "p",
 			},
 			usage: "-p <value>",
 		},
 		{
-			name: "an Option{} with long only",
+			name: "an Option with long only",
 			opt: option.T{
 				Long: "port",
 			},
 			usage: "    --port <value>",
 		},
 		{
-			name: "an Option{} with named value",
+			name: "an Option with named value",
 			opt: option.T{
 				Short:     "p",
 				Long:      "port",
@@ -137,18 +137,34 @@ func TestOptionDescriptionUsage(t *testing.T) {
 			usage: "-p, --port <port>",
 		},
 		{
-			name: "an positional Option{} with nameonly",
+			name: "a positional Option",
 			opt: option.T{
 				ValueName: "port",
+				Position:  1,
 			},
 			usage: "<port>",
 		},
 		{
-			name: "an positional Option{} with nameonly",
+			name: "a positional Option with no name",
 			opt: option.T{
-				ValueName: "port",
+				Position: 2,
 			},
-			usage: "<port>",
+			usage: "<arg2>",
+		},
+		{
+			name: "a remaining arguments Option",
+			opt: option.T{
+				ValueName: "ports",
+				Args:      true,
+			},
+			usage: "<ports>...",
+		},
+		{
+			name: "a remaining arguments Option with no name",
+			opt: option.T{
+				Args: true,
+			},
+			usage: "<args>...",
 		},
 	}
 

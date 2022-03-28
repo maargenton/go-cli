@@ -189,3 +189,7 @@ eval $(<command> --bash-completion-script)
 ```
 Once setup, bash will invoke the command to get completion suggestions, with two
 special environment variables set, `COMP_WORD` and `COMP_INDEX`.
+
+If for some reason a command should not support the built-in completion, the
+completion machinery can be disabled by setting `cmd.DisableCompletion` on the
+root command.

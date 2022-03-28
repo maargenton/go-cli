@@ -17,10 +17,11 @@ type Command struct {
 	Handler     Handler
 	Description string
 
-	ProcessName  string
-	ProcessArgs  []string
-	ProcessEnv   map[string]string
-	ConsoleWidth int
+	ProcessName       string
+	ProcessArgs       []string
+	ProcessEnv        map[string]string
+	ConsoleWidth      int
+	DisableCompletion bool
 
 	Suggestions []option.Description
 
@@ -91,17 +92,18 @@ func (cmd *Command) Run() error {
 		"h", "help", "display usage information",
 		ErrHelpRequested)
 
-	cmd.opts.AddSpecialFlag(
-		"", "bash-completion-script",
-		"generate a bash script that sets up completion for this command; "+
-			"to use, run the following line or add it to your .bash_profile:\n"+
-			"eval $("+cmd.ProcessName+" --bash-completion-script)",
-		ErrCompletionScriptRequested)
+	if !cmd.DisableCompletion {
+		cmd.opts.AddSpecialFlag(
+			"", "bash-completion-script",
+			"generate a bash script that sets up completion for this command; "+
+				"to use, run the following line or add it to your .bash_profile:\n"+
+				"eval $("+cmd.ProcessName+" --bash-completion-script)",
+			ErrCompletionScriptRequested)
 
-	if cmd.handleCompletionRequest() {
-		return ErrCompletionRequested
+		if cmd.handleCompletionRequest() {
+			return ErrCompletionRequested
+		}
 	}
-
 	if err := cmd.opts.ApplyDefaults(); err != nil {
 		return err
 	}
@@ -133,15 +135,15 @@ func (cmd *Command) Usage() string {
 
 	var args []string
 	for _, opt := range cmd.opts.Positional {
-		var name = opt.ValueName
+		var name = opt.Name()
 		if opt.Optional {
-			args = append(args, fmt.Sprintf("[<%v>]", name))
+			args = append(args, fmt.Sprintf("[%v]", name))
 		} else {
-			args = append(args, fmt.Sprintf("<%v>", name))
+			args = append(args, fmt.Sprintf("%v", name))
 		}
 	}
 	if cmd.opts.Args != nil {
-		args = append(args, "...")
+		args = append(args, cmd.opts.Args.Name())
 	}
 
 	var usage strings.Builder
@@ -152,10 +154,16 @@ func (cmd *Command) Usage() string {
 
 	var options []option.Description
 	for _, arg := range cmd.opts.Positional {
-		options = append(options, arg.GetUsage())
+		var usage = arg.GetUsage()
+		if usage.Description != "" {
+			options = append(options, usage)
+		}
 	}
-	if cmd.opts.Args != nil {
-		options = append(options, cmd.opts.Args.GetUsage())
+	if arg := cmd.opts.Args; arg != nil {
+		var usage = arg.GetUsage()
+		if usage.Description != "" {
+			options = append(options, usage)
+		}
 	}
 	for _, opt := range cmd.opts.Options {
 		options = append(options, opt.GetUsage())
