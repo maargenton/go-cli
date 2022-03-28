@@ -1,6 +1,6 @@
 module github.com/maargenton/go-cli
 
-go 1.13
+go 1.17
 
 require (
 	github.com/maargenton/go-errors v1.0.0
