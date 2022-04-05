@@ -91,20 +91,16 @@ go get github.com/maargenton/go-cli
 
 ```go
 type cmd struct {
-    Port     string  `opts:"arg:1, name:port" desc:"..."`
-    Baudrate *uint32 `opts:"-b, --baudrate"   desc:"..."`
-    Format   *string `opts:"-f, --format"     desc:"..."`
-
-    Timestamp bool `opts:"-t, --timestamp" desc:"..."`
-    Verbose   bool `opts:"-v, --verbose"   desc:"..."`
+    Port      *string  `opts:"arg:1, name:port" desc:"..."`
+    Format    *string  `opts:"-f, --format"     desc:"..."`
+    Verbose   bool     `opts:"-v, --verbose"    desc:"..."`
+    List      []string `opts:"-l, --list, sep:\\, , env:LIST"`
 }
-
 
 func (options *cmd) Run() error {
     // This function is invoked once the options struct has been
     // initialized with default values, values from the environment
     // and values from the command-line.
-
     return nil;
 }
 
@@ -124,15 +120,22 @@ environment variable to configure the command before calling `cmd.Run()`.
 ### Struct tags
 
 The details of the command-line interface are defined on the struct with `opts`
-struct tags, containing a comma separated list of the following:
+struct tags. Each tag contains a comma-separated list of a short name and/or
+long name and additional options in the form `key:value`. Within the value,
+reserved characters (comma and colon) can be escaped with a double-backslash
+`\\`. For example, to accept a comma-separated list of values, a option should
+include `sep:\\,`.
+
+The `opts` tag can consist of:
 - `-b,--baudrate`: either or both of a short and long flag name for the option
 - `arg:<n>` : captures a positional argument
 - `args` : captures all remaining arguments
-- `default` : a default value for the field if not specified on the command-line
-- `env` : the name of an environment variable that can override the default
-- `sep`: a separator for fields that can accept multiple values. By default,
+- `default:` : a default value for the field if not specified on the
+  command-line
+- `env:` : the name of an environment variable that can override the default
+- `sep:`: a separator for fields that can accept multiple values. By default,
   multiple values must be specified by repeating the option flag multiple times.
-- `name`: the display name for the value, used when printing out description of
+- `name:`: the display name for the value, used when printing out description of
   the field.
 
 A separate `desc` struct tag contains the description for the option.
