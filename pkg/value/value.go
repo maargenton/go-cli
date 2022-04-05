@@ -11,20 +11,18 @@ import (
 // as value parser for type T
 func RegisterParser(parsers ...interface{}) {
 	for _, parser := range parsers {
-		parser := newParserFunc(parser)
-		var valueType = parser.valueType()
-		var typeName = valueType.Name()
+		var f = makeParserFunc(parser)
+		var valueType = f.valueType()
 
-		var parsers = parseFunctions[typeName]
-		for _, p := range parsers {
-			if p.valueType() == valueType && parser != p {
+		if ff, exist := parseFunctions[valueType]; exist {
+			if f != ff {
 				panic(fmt.Sprintf(
 					"parse function for type '%v' is already registered",
 					valueType))
 			}
+		} else {
+			parseFunctions[valueType] = f
 		}
-
-		parseFunctions[typeName] = append(parseFunctions[typeName], parser)
 	}
 }
 
@@ -32,11 +30,8 @@ func RegisterParser(parsers ...interface{}) {
 // value parser, implements to flag.Value interface or implements
 // encoding.TextUnmarshaler interface.
 func CanParseType(t reflect.Type) bool {
-
-	for _, f := range parseFunctions[t.Name()] {
-		if f.valueType() == t {
-			return true
-		}
+	if _, exist := parseFunctions[t]; exist {
+		return true
 	}
 
 	var p = reflect.PtrTo(t)
@@ -66,17 +61,15 @@ func Parse(v interface{}, s string) error {
 	var vv = reflect.ValueOf(v)
 	var valueType = vv.Type().Elem()
 
-	for _, f := range parseFunctions[valueType.Name()] {
-		if f.valueType() == valueType {
-			r, err := f.call(s)
-			if err != nil {
-				return fmt.Errorf(
-					"invalid value '%v' for type '%v': %w",
-					s, valueType, err)
-			}
-			vv.Elem().Set(reflect.ValueOf(r))
-			return nil
+	if f, exist := parseFunctions[valueType]; exist {
+		r, err := f.call(s)
+		if err != nil {
+			return fmt.Errorf(
+				"invalid value '%v' for type '%v': %w",
+				s, valueType, err)
 		}
+		vv.Elem().Set(reflect.ValueOf(r))
+		return nil
 	}
 
 	var err error
@@ -132,7 +125,7 @@ var (
 
 type parserFunc reflect.Value
 
-var parseFunctions = map[string][]parserFunc{}
+var parseFunctions = map[reflect.Type]parserFunc{}
 
 func (fct parserFunc) valueType() reflect.Type {
 	return reflect.Value(fct).Type().Out(0)
@@ -150,7 +143,7 @@ func (fct parserFunc) call(s string) (interface{}, error) {
 	return result, err
 }
 
-func newParserFunc(f interface{}) parserFunc {
+func makeParserFunc(f interface{}) parserFunc {
 	var v = reflect.ValueOf(f)
 	var t = v.Type()
 

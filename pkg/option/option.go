@@ -184,9 +184,9 @@ func (opt *T) SetBool() {
 func (opt *T) SetValue(s string) error {
 	var fv = opt.opts.target.FieldByIndex(opt.Index)
 	var err error
-	if fv.Kind() == reflect.Ptr {
+	if opt.Type == Ptr {
 		err = opt.setPtrValue(fv, s)
-	} else if fv.Kind() == reflect.Slice {
+	} else if opt.Type == Slice {
 		err = opt.setSliceValue(fv, s)
 	} else {
 		err = value.Parse(fv.Addr().Interface(), s)
