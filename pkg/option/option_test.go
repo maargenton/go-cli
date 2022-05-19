@@ -2,12 +2,16 @@ package option_test
 
 import (
 	"fmt"
+	"net/url"
+	"reflect"
 	"testing"
 	"time"
 
 	"github.com/maargenton/go-testpredicate/pkg/require"
+	"github.com/maargenton/go-testpredicate/pkg/verify"
 
 	"github.com/maargenton/go-cli/pkg/option"
+	"github.com/maargenton/go-cli/pkg/value"
 )
 
 // ---------------------------------------------------------------------------
@@ -405,4 +409,29 @@ func TestOption_SetValue(t *testing.T) {
 			})
 		})
 	})
+}
+
+// ---------------------------------------------------------------------------
+// Option.SetValue() -- parsable pointer type
+// ---------------------------------------------------------------------------
+
+func TestOption_SetValue_Ptr(t *testing.T) {
+	value.RegisterParser(url.Parse)
+
+	args := struct {
+		URL *url.URL `opts:"--url"`
+	}{}
+	optionSet, err := option.NewOptionSet(&args)
+	require.That(t, err).IsNil()
+	require.That(t, optionSet).IsNotNil()
+
+	urlType := reflect.TypeOf(args.URL)
+	opt := optionSet.Options[0]
+
+	// Because *url.URL is directly parsable because of the registered parser,
+	// both FieldType and ValueType should be *url.URL, and the field should be
+	// handled as a regular value.
+	verify.That(t, opt.FieldType).Eq(urlType)
+	verify.That(t, opt.ValueType).Eq(urlType)
+	verify.That(t, opt.Type).Eq(option.Value)
 }

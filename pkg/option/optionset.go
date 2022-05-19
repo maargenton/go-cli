@@ -333,8 +333,17 @@ func (opts *Set) parseField(f reflect.StructField, index []int) error {
 
 		var fieldType = f.Type
 		var valueType = fieldType
-		if fieldType.Kind() == reflect.Ptr || fieldType.Kind() == reflect.Slice {
+		var optionType = Value
+		if fieldType.Kind() == reflect.Slice {
 			valueType = fieldType.Elem()
+			optionType = Slice
+		}
+		if fieldType.Kind() == reflect.Ptr && !value.CanParseType(fieldType) {
+			valueType = fieldType.Elem()
+			optionType = Ptr
+		}
+		if valueType.Kind() == reflect.Bool {
+			optionType = Bool
 		}
 
 		if !value.CanParseType(valueType) {
@@ -349,16 +358,6 @@ func (opts *Set) parseField(f reflect.StructField, index []int) error {
 			return fmt.Errorf(
 				"field '%v' of '%v' is not settable",
 				f.Name, opts.target.Type())
-
-		}
-
-		var optionType = Value
-		if fieldType.Kind() == reflect.Slice {
-			optionType = Slice
-		} else if valueType.Kind() == reflect.Bool {
-			optionType = Bool
-		} else if fieldType.Kind() == reflect.Ptr {
-			optionType = Ptr
 		}
 
 		var opt = &T{
