@@ -3,10 +3,16 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/maargenton/go-cli"
+	"github.com/maargenton/go-cli/pkg/value"
 )
+
+func init() {
+	value.RegisterParser(url.Parse)
+}
 
 type dummyLoadCmd struct {
 	WorkerCount int           `yaml:"workerCount"  opts:"-j,--job, default: 1"                            desc:"number of concurrent tasks to run"`
@@ -16,6 +22,8 @@ type dummyLoadCmd struct {
 	ServicePort int `yaml:"servicePort"  opts:"--service-port, default: 8080, env: SERVICE_PORT, name: port"  desc:"port number the main service endpoint"`
 	MetricsPort int `yaml:"metricsPort"  opts:"--metrics-port, default: 8081, env: METRICS_PORT, name: port"  desc:"port number the service metrics and monitoring endpoint"`
 	// Actions     []string `yaml:"actions" opts:"--actions, delim:\\,, default:foo\\,bar\\,foobar"`
+
+	URL *url.URL `opts:"--url"`
 }
 
 func (options *dummyLoadCmd) Run() error {

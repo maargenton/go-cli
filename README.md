@@ -193,6 +193,14 @@ eval $(<command> --bash-completion-script)
 Once setup, bash will invoke the command to get completion suggestions, with two
 special environment variables set, `COMP_WORD` and `COMP_INDEX`.
 
+When using zsh, you can still leverage bash completion scripts by adding the
+following to you `~/.zshrc`, before th eval command:
+
+```zsh
+autoload -U +X compinit && compinit
+autoload -U +X bashcompinit && bashcompinit
+```
+
 If for some reason a command should not support the built-in completion, the
 completion machinery can be disabled by setting `cmd.DisableCompletion` on the
 root command.
