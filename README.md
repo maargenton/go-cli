@@ -204,3 +204,31 @@ autoload -U +X bashcompinit && bashcompinit
 If for some reason a command should not support the built-in completion, the
 completion machinery can be disabled by setting `cmd.DisableCompletion` on the
 root command.
+
+
+## Enum support
+
+To help with command-line handling of enumerated types, the `go-cli` package
+includes a code generator command for use with `go:generate` that adds the
+necessary `flag.Value` interface methods to enumerated types.
+
+The command is primarily intended to be run in the context of go:generate, from
+a file that contains definitions for one or more enumerated types. In that
+context, it is executed from the folder of that file and processes the current
+package. It generates one file with `_enumer.go` suffix for every file in the
+package that contains an enumerated type.
+
+For example, the file pkg/strcase/format.go contains the following line:
+
+```go
+//go:generate go run github.com/maargenton/go-cli/cmd/enumer format.go
+```
+
+which generate `format_enumer.go` for the `Format` type. The command is
+restricted to process only the definitions found in `format.go`.
+
+The string representation of enumerated values is flexible and configurable, and
+defaults to `filtered-hyphen-case`. The generated `Parse...()` function and
+`Set()` method accept all supported string representations; the `String()`
+method prints the value in the specified representation. The representation
+format can be specified on the command-line with `-f` or `--format` option.
