@@ -1,6 +1,17 @@
 package enumer
 
-var templateText = `
+import (
+	"text/template"
+)
+
+var funcMap = template.FuncMap{}
+
+var enumerTemplate = template.Must(
+	template.New("template_enumer.go").
+		Funcs(funcMap).
+		Parse(enumerTemplateStr))
+
+var enumerTemplateStr = `
 // GENERATED CODE -- DO NOT EDIT
 
 package {{.PkgName}}
@@ -74,6 +85,62 @@ func (v *{{.Name}}) Set(s string) error {
 	}
 	*v = vv
 	return nil
+}
+
+// {{.Name}}
+// ---------------------------------------------------------------------------
+{{end}}
+`
+
+var enumerTestTemplate = template.Must(
+	template.New("template_enumer_test.go").
+		Funcs(funcMap).
+		Parse(enumerTestTemplateStr))
+
+var enumerTestTemplateStr = `
+// GENERATED CODE -- DO NOT EDIT
+
+package {{.PkgName}}_test
+
+import (
+	"math"
+	"testing"
+)
+
+{{range .Types}}
+// ---------------------------------------------------------------------------
+// {{.Name}}
+
+func Test{{.Name}}Enummer(t *testing.T) {
+	var l = [] {{ $.PkgName }}.{{ .Name }} {
+		{{range .Values -}}
+		{{ $.PkgName }}.{{ .GoName }},
+		{{end -}}
+	}
+
+	for _, v := range l {
+		var vv {{ $.PkgName }}.{{ .Name }}
+		var err = vv.Set(v.String())
+		if err != nil {
+			t.Errorf("failed to parse %v", v.String())
+		}
+		if v != vv {
+			t.Errorf("%v != %v", v, vv)
+		}
+	}
+
+	{{if .UnderlyingMaxIntLiteral -}}
+	var v = {{ $.PkgName }}.{{ .Name }}({{.UnderlyingMaxIntLiteral}})
+	{{else -}}
+	var v {{ $.PkgName }}.{{ .Name }}
+	{{end -}}
+	_ = v.String()
+	if len(v.EnumValues()) == 0 {
+		t.Errorf("unexpected empty EnumValues()")
+	}
+	if err := v.Set("--**--some-string-that-should-never-match-anything--??--"); err == nil {
+		t.Errorf("Set() with invalid values should generate an error")
+	}
 }
 
 // {{.Name}}

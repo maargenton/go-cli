@@ -22,7 +22,8 @@ type EnumType struct {
 	Position     token.Position
 	def          *types.Named
 
-	Values []EnumValue
+	UnderlyingMaxIntLiteral string
+	Values                  []EnumValue
 }
 
 // EnumValueDef records the definition of an enumerated value

@@ -136,5 +136,36 @@ func ExtractValues(t *EnumType, f strcase.Format) error {
 
 		t.Values = append(t.Values, value)
 	}
+
+	if basic, ok := t.def.Underlying().(*types.Basic); ok {
+		t.UnderlyingMaxIntLiteral = UnderlyingMaxIntLiteral(basic.Kind())
+	}
+
 	return nil
+}
+
+func UnderlyingMaxIntLiteral(k types.BasicKind) string {
+	switch k {
+	case types.Int:
+		return "math.MaxInt"
+	case types.Int8:
+		return "math.MaxInt8"
+	case types.Int16:
+		return "math.MaxInt16"
+	case types.Int32:
+		return "math.MaxInt32"
+	case types.Int64:
+		return "math.MaxInt64"
+	case types.Uint:
+		return "math.MaxUint"
+	case types.Uint8:
+		return "math.MaxUint8"
+	case types.Uint16:
+		return "math.MaxUint16"
+	case types.Uint32:
+		return "math.MaxUint32"
+	case types.Uint64:
+		return "math.MaxUint64"
+	}
+	return ""
 }

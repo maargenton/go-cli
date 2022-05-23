@@ -31,11 +31,6 @@ func (opts *Cmd) Run() error {
 		return err
 	}
 
-	tmpl, err := template.New("template").Parse(templateText)
-	if err != nil {
-		return fmt.Errorf("failed to parse template: %w", err)
-	}
-
 	if len(opts.Files) == 0 {
 		var files []string
 		for _, t := range enums.Types {
@@ -47,6 +42,7 @@ func (opts *Cmd) Run() error {
 
 	for _, f := range opts.Files {
 		of := strings.ReplaceAll(f, ".go", "_enumer.go")
+		otf := strings.ReplaceAll(f, ".go", "_enumer_test.go")
 		var data = &PkgEnums{
 			PkgName: enums.PkgName,
 			PkgPath: enums.PkgPath,
@@ -63,7 +59,10 @@ func (opts *Cmd) Run() error {
 			return fmt.Errorf("no enum type found in %v", f)
 		}
 
-		if err := applyTemplate(of, tmpl, data); err != nil {
+		if err := applyTemplate(of, enumerTemplate, data); err != nil {
+			return err
+		}
+		if err := applyTemplate(otf, enumerTestTemplate, data); err != nil {
 			return err
 		}
 	}

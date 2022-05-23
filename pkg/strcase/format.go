@@ -6,7 +6,7 @@ import (
 
 //go:generate go run github.com/maargenton/go-cli/cmd/enumer format.go
 
-type Format int
+type Format uint8
 
 const (
 	CamelCase Format = iota

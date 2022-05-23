@@ -5,6 +5,14 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "enumer pkg/strcase",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/cmd/enumer",
+            "cwd": "${workspaceFolder}/pkg/strcase",
+        },
+        {
             "name": "sercat-demo",
             "type": "go",
             "request": "launch",
