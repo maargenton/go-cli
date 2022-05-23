@@ -1,3 +1,18 @@
+# v0.4.0
+
+## Key Features
+
+- Add `enumer` command to generate flag.Value interface methods for enumerated
+  types and make them usable as direct recipients for command-line arguments
+- Add support for custom value parser defined on pointer types (like
+  `url.Parse`)
+
+## Improvements
+
+- Clarify README `opts` struct tag documentation
+- Add note in README for setting up bash completion compatibility in zsh
+
+
 # v0.3.1
 
 ## Major Features
