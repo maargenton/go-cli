@@ -87,6 +87,14 @@ func (v *{{.Name}}) Set(s string) error {
 	return nil
 }
 
+func (v {{.Name}}) MarshalText() (text []byte, err error) {
+	return []byte(v.String()), nil
+}
+
+func (v *{{.Name}}) UnmarshalText(text []byte) error {
+	return v.Set(string(text))
+}
+
 // {{.Name}}
 // ---------------------------------------------------------------------------
 {{end}}
@@ -141,6 +149,9 @@ func Test{{.Name}}Enummer(t *testing.T) {
 	if err := v.Set("--**--some-string-that-should-never-match-anything--??--"); err == nil {
 		t.Errorf("Set() with invalid values should generate an error")
 	}
+
+	var b, _ = v.MarshalText()
+	_ = v.UnmarshalText(b)
 }
 
 // {{.Name}}

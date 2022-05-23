@@ -47,6 +47,9 @@ func TestFormatEnummer(t *testing.T) {
 	if err := v.Set("--**--some-string-that-should-never-match-anything--??--"); err == nil {
 		t.Errorf("Set() with invalid values should generate an error")
 	}
+
+	var b, _ = v.MarshalText()
+	_ = v.UnmarshalText(b)
 }
 
 // Format

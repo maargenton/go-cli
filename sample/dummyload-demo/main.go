@@ -10,9 +10,22 @@ import (
 	"github.com/maargenton/go-cli/pkg/value"
 )
 
+//go:generate go run github.com/maargenton/go-cli/cmd/enumer main.go
+
 func init() {
 	value.RegisterParser(url.Parse)
 }
+
+type WorkloadType uint8
+
+const (
+	Rsa2048 WorkloadType = iota
+	Rsa4096
+	EcdsaP256
+	EcdsaP284
+	EcdsaP521
+	Ed25519
+)
 
 type dummyLoadCmd struct {
 	WorkerCount int           `yaml:"workerCount"  opts:"-j,--job, default: 1"                            desc:"number of concurrent tasks to run"`
@@ -23,7 +36,8 @@ type dummyLoadCmd struct {
 	MetricsPort int `yaml:"metricsPort"  opts:"--metrics-port, default: 8081, env: METRICS_PORT, name: port"  desc:"port number the service metrics and monitoring endpoint"`
 	// Actions     []string `yaml:"actions" opts:"--actions, delim:\\,, default:foo\\,bar\\,foobar"`
 
-	URL *url.URL `opts:"--url"`
+	URL      *url.URL     `opts:"--url"`
+	Workload WorkloadType `opts:"--workload"`
 }
 
 func (options *dummyLoadCmd) Run() error {

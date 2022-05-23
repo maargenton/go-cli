@@ -62,8 +62,10 @@ func (opts *Cmd) Run() error {
 		if err := applyTemplate(of, enumerTemplate, data); err != nil {
 			return err
 		}
-		if err := applyTemplate(otf, enumerTestTemplate, data); err != nil {
-			return err
+		if data.PkgName != "main" {
+			if err := applyTemplate(otf, enumerTestTemplate, data); err != nil {
+				return err
+			}
 		}
 	}
 

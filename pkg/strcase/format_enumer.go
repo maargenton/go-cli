@@ -169,5 +169,13 @@ func (v *Format) Set(s string) error {
 	return nil
 }
 
+func (v Format) MarshalText() (text []byte, err error) {
+	return []byte(v.String()), nil
+}
+
+func (v *Format) UnmarshalText(text []byte) error {
+	return v.Set(string(text))
+}
+
 // Format
 // ---------------------------------------------------------------------------
