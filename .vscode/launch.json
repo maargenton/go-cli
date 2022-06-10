@@ -29,6 +29,20 @@
                 "--timestamp",
                 "/dev/tty.Bluetooth-Incoming-Port",
             ]
+        },
+        {
+            "name": "dummyload-demo completion",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/sample/dummyload-demo",
+            "args": [
+                "--workload"
+            ],
+            "env": {
+                "COMP_INDEX": "2",
+                "COMP_WORD": "--"
+            }
         }
     ]
 }

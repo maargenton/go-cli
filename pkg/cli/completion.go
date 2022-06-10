@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 
 	"github.com/maargenton/go-fileutils"
 	"github.com/maargenton/go-fileutils/pkg/dir"
 
+	"github.com/maargenton/go-cli/pkg/enumer/enum"
 	"github.com/maargenton/go-cli/pkg/option"
 )
 
@@ -67,6 +69,16 @@ func MatchingFilenameCompletion(opt *option.T, pattern string, w string) (r []st
 		}
 	}
 	return DefaultFilenameCompletion(opt, w)
+}
+
+func getTypeCompletion(opt *option.T) (r []string) {
+	var v = reflect.New(opt.ValueType).Interface()
+	if v, ok := v.(enum.Type); ok {
+		for _, vv := range v.EnumValues() {
+			r = append(r, vv.Name)
+		}
+	}
+	return
 }
 
 // ---

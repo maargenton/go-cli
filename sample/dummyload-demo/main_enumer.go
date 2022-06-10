@@ -30,31 +30,37 @@ var _ enum.Type = (*WorkloadType)(nil)
 var WorkloadTypeValues = []enum.Value{
 	{
 		Name:     "rsa2048",
+		GoName:   "Rsa2048",
 		AltNames: []string{"rsa2048", "Rsa2048"},
 		Value:    Rsa2048,
 	},
 	{
 		Name:     "rsa4096",
+		GoName:   "Rsa4096",
 		AltNames: []string{"rsa4096", "Rsa4096"},
 		Value:    Rsa4096,
 	},
 	{
 		Name:     "ecdsa-p256",
+		GoName:   "EcdsaP256",
 		AltNames: []string{"ecdsa-p256", "EcdsaP256", "ecdsaP256", "ecdsa_p256"},
 		Value:    EcdsaP256,
 	},
 	{
 		Name:     "ecdsa-p284",
+		GoName:   "EcdsaP284",
 		AltNames: []string{"ecdsa-p284", "EcdsaP284", "ecdsaP284", "ecdsa_p284"},
 		Value:    EcdsaP284,
 	},
 	{
 		Name:     "ecdsa-p521",
+		GoName:   "EcdsaP521",
 		AltNames: []string{"ecdsa-p521", "EcdsaP521", "ecdsaP521", "ecdsa_p521"},
 		Value:    EcdsaP521,
 	},
 	{
 		Name:     "ed25519",
+		GoName:   "Ed25519",
 		AltNames: []string{"ed25519", "Ed25519"},
 		Value:    Ed25519,
 	},
