@@ -21,7 +21,7 @@ type Completion struct {
 // `option.T` whose value needs to be completed.
 func (opts *Set) GetCompletion(args []string, partial string) (r Completion) {
 
-	// Evaluate commandline arguments, discarding values
+	// Evaluate command-line arguments, discarding values
 	var opt *T
 	var remainingArgs []string
 	var usedOptions = make(map[*T]struct{})

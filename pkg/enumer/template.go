@@ -46,6 +46,7 @@ var {{.Name}}Values = []enum.Value{
 	{{range .Values -}}
 	{
 		Name:     {{.Name | printf "%q"}},
+		GoName:   {{.GoName | printf "%q"}},
 		AltNames: []string{ {{range .AltNames -}}{{. | printf "%q"}},{{end -}} },
 		Value:    {{.GoName}},
 	},
