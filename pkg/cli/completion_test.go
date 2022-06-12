@@ -4,8 +4,6 @@ import (
 	"testing"
 
 	"github.com/maargenton/go-testpredicate/pkg/require"
-	"github.com/maargenton/go-testpredicate/pkg/subexpr"
-	"github.com/maargenton/go-testpredicate/pkg/verify"
 
 	"github.com/maargenton/go-cli/pkg/cli"
 	"github.com/maargenton/go-cli/pkg/option"
@@ -19,55 +17,26 @@ func TestBashCompletionScript(t *testing.T) {
 	require.That(t, script).Contains("complete -F _command-name_completion command-name")
 }
 
-func TestFormatCompletionSuggestions(t *testing.T) {
-
-	t.Run("Given a list of suggestions", func(t *testing.T) {
-		suggestions := []option.Description{
-			{Option: "foo <value>", Description: "foo description"},
-			{Option: "bar <value>", Description: "bar description"},
-		}
-		t.Run("when calling FormatCompletionSuggestions()", func(t *testing.T) {
-			width := 40
-			lines := splitLines(cli.FormatCompletionSuggestions(width, suggestions))
-
-			t.Run("then all lines are at most the width", func(t *testing.T) {
-				verify.That(t, lines).Length().Eq(2)
-				verify.That(t, lines).All(
-					subexpr.Value().Length().Le(width))
-			})
-		})
-		t.Run("when calling FormatCompletionSuggestions() with a single option", func(t *testing.T) {
-			width := 40
-			lines := splitLines(cli.FormatCompletionSuggestions(width, suggestions[:1]))
-
-			t.Run("then only the first word of the option is printed", func(t *testing.T) {
-				require.That(t, lines).Length().Eq(1)
-				verify.That(t, lines[0]).Eq("foo")
-			})
-		})
-	})
-}
-
 func TestDefaultCompletion(t *testing.T) {
 	t.Run("Given the current directory structure", func(t *testing.T) {
 		t.Run("when Calling DefaultCompletion() with an empty string", func(t *testing.T) {
-			suggestions := cli.DefaultCompletion("")
+			suggestions := cli.DefaultCompletion(nil, "")
 			t.Run("then suggestions include the local files", func(t *testing.T) {
-				require.That(t, suggestions).Field("Option").IsSupersetOf(
+				require.That(t, suggestions).IsSupersetOf(
 					[]string{"completion.go", "completion_test.go"})
 			})
 		})
 		t.Run("when Calling DefaultCompletion() with partial filename", func(t *testing.T) {
-			suggestions := cli.DefaultCompletion("comp")
+			suggestions := cli.DefaultCompletion(nil, "comp")
 			t.Run("then suggestions include only the matching files", func(t *testing.T) {
-				require.That(t, suggestions).Field("Option").IsEqualSet(
+				require.That(t, suggestions).IsEqualSet(
 					[]string{"completion.go", "completion_test.go"})
 			})
 		})
 		t.Run("when Calling DefaultCompletion() with partial unique folder name", func(t *testing.T) {
-			suggestions := cli.DefaultCompletion("../cl")
+			suggestions := cli.DefaultCompletion(nil, "../cl")
 			t.Run("then suggestions include the files in that folder", func(t *testing.T) {
-				require.That(t, suggestions).Field("Option").IsSupersetOf([]string{
+				require.That(t, suggestions).IsSupersetOf([]string{
 					"../cli/completion.go",
 					"../cli/completion_test.go",
 				})
@@ -76,29 +45,29 @@ func TestDefaultCompletion(t *testing.T) {
 	})
 }
 
-func TestFilepathCompletion(t *testing.T) {
-	t.Run("Given a call to FilepathCompletion()", func(t *testing.T) {
+func TestMatchingFilenameCompletion(t *testing.T) {
+	t.Run("Given a call to MatchingFilenameCompletion()", func(t *testing.T) {
 		t.Run("when passing a pattern and an empty string", func(t *testing.T) {
-			suggestions := cli.FilepathCompletion("*_test.go", "")
+			suggestions := cli.MatchingFilenameCompletion(nil, "*_test.go", "")
 
 			t.Run("then suggestions include all filenames matching the pattern", func(t *testing.T) {
-				require.That(t, suggestions).Field("Option").IsEqualSet(
+				require.That(t, suggestions).IsEqualSet(
 					[]string{"cmd_test.go", "completion_test.go"})
 			})
 		})
 		t.Run("when passing a pattern and a partial name", func(t *testing.T) {
-			suggestions := cli.FilepathCompletion("*_test.go", "co")
+			suggestions := cli.MatchingFilenameCompletion(nil, "*_test.go", "co")
 
 			t.Run("then suggestions include only filenames matching both", func(t *testing.T) {
-				require.That(t, suggestions).Field("Option").IsEqualSet(
+				require.That(t, suggestions).IsEqualSet(
 					[]string{"completion_test.go"})
 			})
 		})
 		t.Run("when passing a pattern and a non-matching partial name", func(t *testing.T) {
-			suggestions := cli.FilepathCompletion("*_test.go", "er")
+			suggestions := cli.MatchingFilenameCompletion(nil, "*_test.go", "er")
 
 			t.Run("then the pattern is ignored and all matching files are returned", func(t *testing.T) {
-				require.That(t, suggestions).Field("Option").IsEqualSet(
+				require.That(t, suggestions).IsEqualSet(
 					[]string{"errors.go"})
 			})
 		})
@@ -124,16 +93,12 @@ type compCmd2 struct {
 	compCmd
 }
 
-func (c *compCmd2) Complete(opt *option.T, partial string) []option.Description {
+func (c *compCmd2) Complete(opt *option.T, partial string) []string {
 	if opt.Long == "option" {
-		return []option.Description{
-			{Option: "aaa"}, {Option: "bbb"}, {Option: "ccc"},
-		}
+		return []string{"aaa", "bbb", "ccc"}
 	}
 	if opt.Args {
-		return []option.Description{
-			{Option: "ddd"}, {Option: "eee"}, {Option: "fff"},
-		}
+		return []string{"ddd", "eee", "fff"}
 	}
 	return nil
 }
@@ -163,7 +128,7 @@ func TestCommandRunCompletion(t *testing.T) {
 			})
 			t.Run("then the suggestions contain the matching flag", func(t *testing.T) {
 				require.That(t, cmd.Suggestions).Length().Eq(1)
-				require.That(t, cmd.Suggestions[0].Option).StartsWith("--option")
+				require.That(t, cmd.Suggestions[0]).StartsWith("--option")
 			})
 		})
 
@@ -183,7 +148,7 @@ func TestCommandRunCompletion(t *testing.T) {
 				require.That(t, err).IsError(cli.ErrCompletionRequested)
 			})
 			t.Run("then the suggestions contain matching local filenames", func(t *testing.T) {
-				require.That(t, cmd.Suggestions).Field("Option").IsSupersetOf(
+				require.That(t, cmd.Suggestions).IsSupersetOf(
 					[]string{"completion.go", "completion_test.go"})
 			})
 		})
@@ -204,11 +169,11 @@ func TestCommandRunCompletion(t *testing.T) {
 				require.That(t, err).IsError(cli.ErrCompletionRequested)
 			})
 			t.Run("then the suggestions include option flags", func(t *testing.T) {
-				require.That(t, cmd.Suggestions).Field("Option").IsSupersetOf(
-					[]string{"--verbose", "--option <value>"})
+				require.That(t, cmd.Suggestions).IsSupersetOf(
+					[]string{"--verbose", "--option"})
 			})
 			t.Run("then the suggestions include argument options", func(t *testing.T) {
-				require.That(t, cmd.Suggestions).Field("Option").IsSupersetOf(
+				require.That(t, cmd.Suggestions).IsSupersetOf(
 					[]string{"completion.go", "completion_test.go"})
 			})
 		})
@@ -238,11 +203,11 @@ func TestCommandRunCompletion(t *testing.T) {
 				require.That(t, err).IsError(cli.ErrCompletionRequested)
 			})
 			t.Run("then the suggestions include option flags", func(t *testing.T) {
-				require.That(t, cmd.Suggestions).Field("Option").IsSupersetOf(
-					[]string{"--verbose", "--option <value>"})
+				require.That(t, cmd.Suggestions).IsSupersetOf(
+					[]string{"--verbose", "--option"})
 			})
 			t.Run("then the suggestions include argument options", func(t *testing.T) {
-				require.That(t, cmd.Suggestions).Field("Option").IsSupersetOf(
+				require.That(t, cmd.Suggestions).IsSupersetOf(
 					[]string{"ddd", "eee", "fff"})
 			})
 		})
@@ -257,7 +222,7 @@ func TestCommandRunCompletion(t *testing.T) {
 			cmd.Run()
 
 			t.Run("then the suggestions contain matching local filenames", func(t *testing.T) {
-				require.That(t, cmd.Suggestions).Field("Option").IsEqualSet(
+				require.That(t, cmd.Suggestions).IsEqualSet(
 					[]string{"aaa", "bbb", "ccc"})
 			})
 		})

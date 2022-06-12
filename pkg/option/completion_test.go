@@ -37,11 +37,11 @@ func TestGetCompletion(t *testing.T) {
 			completion := optionSet.GetCompletion(args, partial)
 
 			t.Run("then no specific option is being completed", func(t *testing.T) {
-				require.That(t, completion.Opt).IsNil()
+				require.That(t, completion.OptRef).IsNil()
 				require.That(t, completion.OptValues).IsEmpty()
 			})
 			t.Run("then the first argument is being completed", func(t *testing.T) {
-				require.That(t, completion.Arg).Eq(optionSet.Positional[0])
+				require.That(t, completion.ArgRef).Eq(optionSet.Positional[0])
 			})
 			t.Run("then available options are listed", func(t *testing.T) {
 				require.That(t, completion.Options).Length().Eq(5)
@@ -55,8 +55,8 @@ func TestGetCompletion(t *testing.T) {
 
 			t.Run("then only yhe option is returned", func(t *testing.T) {
 				var expected = optionSet.GetOption("baudrate")
-				require.That(t, completion.Opt).Eq(expected)
-				require.That(t, completion.Arg).IsNil()
+				require.That(t, completion.OptRef).Eq(expected)
+				require.That(t, completion.ArgRef).IsNil()
 				require.That(t, completion.Options).IsEmpty()
 			})
 		})
@@ -67,12 +67,12 @@ func TestGetCompletion(t *testing.T) {
 			completion := optionSet.GetCompletion(args, partial)
 
 			t.Run("then remaining options are listed", func(t *testing.T) {
-				require.That(t, completion.Opt).IsNil()
-				require.That(t, completion.Options).Field("Option").IsEqualSet(
-					[]string{"--format <value>", "-v"})
+				require.That(t, completion.OptRef).IsNil()
+				require.That(t, completion.Options).IsEqualSet(
+					[]string{"--format", "-v"})
 			})
 			t.Run("then the first argument is being completed", func(t *testing.T) {
-				require.That(t, completion.Arg).Eq(optionSet.Positional[0])
+				require.That(t, completion.ArgRef).Eq(optionSet.Positional[0])
 			})
 		})
 
@@ -82,12 +82,12 @@ func TestGetCompletion(t *testing.T) {
 			completion := optionSet.GetCompletion(args, partial)
 
 			t.Run("then remaining options are listed", func(t *testing.T) {
-				require.That(t, completion.Opt).IsNil()
-				require.That(t, completion.Options).Field("Option").IsEqualSet(
-					[]string{"--format <value>", "-v"})
+				require.That(t, completion.OptRef).IsNil()
+				require.That(t, completion.Options).IsEqualSet(
+					[]string{"--format", "-v"})
 			})
 			t.Run("then the first argument is being completed", func(t *testing.T) {
-				require.That(t, completion.Arg).Eq(optionSet.Positional[0])
+				require.That(t, completion.ArgRef).Eq(optionSet.Positional[0])
 			})
 		})
 
@@ -97,8 +97,8 @@ func TestGetCompletion(t *testing.T) {
 			completion := optionSet.GetCompletion(args, partial)
 
 			t.Run("then remaining options are listed", func(t *testing.T) {
-				require.That(t, completion.Opt).IsNil()
-				require.That(t, completion.Arg).IsNil()
+				require.That(t, completion.OptRef).IsNil()
+				require.That(t, completion.ArgRef).IsNil()
 				require.That(t, completion.Options).IsEmpty()
 			})
 		})
@@ -109,12 +109,12 @@ func TestGetCompletion(t *testing.T) {
 			completion := optionSet.GetCompletion(args, partial)
 
 			t.Run("then remaining options are listed", func(t *testing.T) {
-				require.That(t, completion.Opt).IsNil()
-				require.That(t, completion.Options).Field("Option").IsEqualSet(
-					[]string{"--format <value>", "-v", "--timestamp"})
+				require.That(t, completion.OptRef).IsNil()
+				require.That(t, completion.Options).IsEqualSet(
+					[]string{"--format", "-v", "--timestamp"})
 			})
 			t.Run("then next argument is being completed", func(t *testing.T) {
-				require.That(t, completion.Arg).Eq(optionSet.Args)
+				require.That(t, completion.ArgRef).Eq(optionSet.Args)
 			})
 		})
 	})

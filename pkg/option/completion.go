@@ -7,21 +7,19 @@ import (
 // Completion records a set of completion suggestions, including usable flags,
 // values for a specific flag and / or values for next remaining argument.
 type Completion struct {
-	Options   []Description
-	Opt       *T
-	OptValues []Description
-	Arg       *T
-	ArgValues []Description
+	Options   []string
+	OptValues []string
+	ArgValues []string
+	OptRef    *T
+	ArgRef    *T
 }
 
 // GetCompletion evaluate the list of command line arguments `args` in the
 // context of the receiver, and determines a list of completion suggestions for
 // the `partial` argument given. The result is a partially filled `Completion`
 // object with either a list of `Options` or one of `Opt` or `Arg` set the the
-// `option.T` whose value ned to be completee.
-func (opts *Set) GetCompletion(args []string, partial string) Completion {
-
-	var suggestions Completion
+// `option.T` whose value needs to be completed.
+func (opts *Set) GetCompletion(args []string, partial string) (r Completion) {
 
 	// Evaluate commandline arguments, discarding values
 	var opt *T
@@ -61,15 +59,15 @@ func (opts *Set) GetCompletion(args []string, partial string) Completion {
 	}
 
 	if opt != nil {
-		suggestions.Opt = opt
-		return suggestions
+		r.OptRef = opt
+		return r
 	}
 
 	var nonExclusiveUsed = len(remainingArgs) > 0
 	for o := range usedOptions {
 		if o.Type == Special {
 			// Exclusive flag has been used, nothing more to suggest
-			return suggestions
+			return r
 		}
 		nonExclusiveUsed = true
 	}
@@ -79,15 +77,15 @@ func (opts *Set) GetCompletion(args []string, partial string) Completion {
 				// Non-exclusive flag has been used, skip special flags
 				continue
 			}
-			suggestions.Options = append(suggestions.Options, o.GetCompletionUsage())
+			r.Options = append(r.Options, o.Name())
 		}
 	}
 
 	if len(remainingArgs) < len(opts.Positional) {
-		suggestions.Arg = opts.Positional[len(remainingArgs)]
+		r.ArgRef = opts.Positional[len(remainingArgs)]
 	} else if opts.Args != nil {
-		suggestions.Arg = opts.Args
+		r.ArgRef = opts.Args
 	}
 
-	return suggestions
+	return r
 }

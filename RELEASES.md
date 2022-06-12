@@ -1,3 +1,12 @@
+# v0.4.1
+
+## Key Features
+
+## Code changes
+
+## Related issues
+
+
 # v0.4.0
 
 ## Key Features
@@ -11,6 +20,12 @@
 
 - Clarify README `opts` struct tag documentation
 - Add note in README for setting up bash completion compatibility in zsh
+
+
+## Code changes
+
+- Add enumer command (#8)
+- Add support for custom value parser define on pointer type (#7)
 
 
 # v0.3.1

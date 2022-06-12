@@ -23,7 +23,7 @@ type Command struct {
 	ConsoleWidth      int
 	DisableCompletion bool
 
-	Suggestions []option.Description
+	Suggestions []string
 
 	opts *option.Set
 }
@@ -49,7 +49,7 @@ type UsageHandler interface {
 // CompletionHandler is an optional interface for the command handler to provide
 // meaningful values for a specific option or argument.
 type CompletionHandler interface {
-	Complete(opt *option.T, partial string) []option.Description
+	Complete(opt *option.T, partial string) []string
 }
 
 // ---------------------------------------------------------------------------
