@@ -132,6 +132,13 @@ func (cmd *Command) getCompletionRequest() (index int, word string) {
 	return
 }
 
+func (cmd *Command) complete(opt *option.T, word string) []string {
+	if handler, ok := cmd.Handler.(CompletionHandler); ok {
+		return handler.Complete(opt, word)
+	}
+	return DefaultCompletion(opt, word)
+}
+
 func dumpCompletionRequest(comp option.Completion) {
 	if s, ok := os.LookupEnv("COMPLETION_DEBUG_OUTPUT"); ok && s != "" {
 		type obj = map[string]interface{}
@@ -150,11 +157,4 @@ func dumpCompletionRequest(comp option.Completion) {
 			return e.Encode(v)
 		})
 	}
-}
-
-func (cmd *Command) complete(opt *option.T, word string) []string {
-	if handler, ok := cmd.Handler.(CompletionHandler); ok {
-		return handler.Complete(opt, word)
-	}
-	return DefaultCompletion(opt, word)
 }
