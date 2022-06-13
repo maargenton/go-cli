@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/maargenton/go-errors"
 	"github.com/maargenton/go-testpredicate/pkg/require"
 	"github.com/maargenton/go-testpredicate/pkg/verify"
 
@@ -169,6 +170,25 @@ func TestOptionDescriptionUsage(t *testing.T) {
 				Args: true,
 			},
 			usage: "<args>...",
+		},
+		{
+			name: "a boolean Option",
+			opt: option.T{
+				Short: "d",
+				Long:  "debug",
+				Type:  option.Bool,
+			},
+			usage: "-d, --debug",
+		},
+		{
+			name: "a special Option",
+			opt: option.T{
+				Short:      "v",
+				Long:       "version",
+				Type:       option.Special,
+				SpecialErr: errors.Sentinel("ErrDisplayVersion"),
+			},
+			usage: "-v, --version",
 		},
 	}
 

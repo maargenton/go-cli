@@ -28,18 +28,19 @@ func (options *sercatCmd) Version() string {
 	return "sercat-demo v0.1.2"
 }
 
-var baudrateCompletion = cli.SimpleSuggestionList(
+var baudrateCompletion = []string{
 	"1200", "1800", "2400", "4800", "7200", "9600",
 	"14400", "19200", "28800", "38400", "57600", "76800",
 	"115200", "230400",
-)
-var formatCompletion = cli.SimpleSuggestionList(
+}
+
+var formatCompletion = []string{
 	"5N1", "6N1", "7N1", "8N1", "5N2", "6N2", "7N2", "8N2",
 	"5O1", "6O1", "7O1", "8O1", "5O2", "6O2", "7O2", "8O2",
 	"5E1", "6E1", "7E1", "8E1", "5E2", "6E2", "7E2", "8E2",
-)
+}
 
-func (options *sercatCmd) Complete(opt *option.T, partial string) []option.Description {
+func (options *sercatCmd) Complete(opt *option.T, partial string) []string {
 	if opt.Long == "baudrate" {
 		return baudrateCompletion
 	}
@@ -47,9 +48,9 @@ func (options *sercatCmd) Complete(opt *option.T, partial string) []option.Descr
 		return formatCompletion
 	}
 	if opt.Position == 1 {
-		return cli.FilepathCompletion("/dev/tty.*", partial)
+		return cli.MatchingFilenameCompletion(opt, "/dev/tty.*", partial)
 	}
-	return cli.DefaultCompletion(partial)
+	return cli.DefaultCompletion(opt, partial)
 }
 
 func (options *sercatCmd) Run() error {

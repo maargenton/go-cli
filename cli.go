@@ -9,26 +9,11 @@ import (
 	"golang.org/x/term"
 
 	"github.com/maargenton/go-cli/pkg/cli"
-	"github.com/maargenton/go-cli/pkg/option"
 )
 
-// Command is the main public type used to define all the details of a comand to
-// be handled.
+// Command is the main public type used to define all the details of a command
+// to be handled.
 type Command = cli.Command
-
-// Suggestion is an alias of `option.Description` used to describe one
-// suggestions in the context of a completion request.
-type Suggestion = option.Description
-
-// SimpleSuggestionList generate a list of Suggestion objects with no
-// description from a list of strings
-func SimpleSuggestionList(options ...string) []Suggestion {
-	var r = make([]option.Description, 0, len(options))
-	for _, o := range options {
-		r = append(r, option.Description{Option: o})
-	}
-	return r
-}
 
 // DefaultCompletion acts like the shell default completion and suggests file
 // and folder names under the current directory. It is used by default when the
@@ -37,9 +22,14 @@ func SimpleSuggestionList(options ...string) []Suggestion {
 // suitable.
 var DefaultCompletion = cli.DefaultCompletion
 
-// FilepathCompletion implements a custom filepath completion scheme, matching
-// the provided pattern if possible.
-var FilepathCompletion = cli.FilepathCompletion
+// DefaultFilenameCompletion implements a default filename-based completion,
+// similar to the default shell completion.
+var DefaultFilenameCompletion = cli.DefaultFilenameCompletion
+
+// MatchingFileCompletion implements a custom filepath completion scheme,
+// matching the provided pattern if possible, using default filename completion
+// as a fallback.
+var MatchingFilenameCompletion = cli.MatchingFilenameCompletion
 
 // Run takes the command line arguments, parses them and execute the
 // command or sub-command with the corresponding options.
@@ -66,10 +56,9 @@ func Run(cmd *Command) {
 			fmt.Printf("%v\n", version)
 		}
 	} else if errors.Is(err, cli.ErrCompletionRequested) {
-		fmt.Printf("%v",
-			cli.FormatCompletionSuggestions(cmd.ConsoleWidth, cmd.Suggestions),
-		)
-		// cli.DumpCompletionSuggestions("competion.txt", cmd.Suggestions)
+		for _, v := range cmd.Suggestions {
+			fmt.Println(v)
+		}
 	} else if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)

@@ -1,3 +1,22 @@
+# v0.5.0
+
+## Key Features
+
+- Simplify completion option and associated interface to a simple list of
+  strings
+- Handle special case in zsh completions, discard `COMP_WORD=--` when not
+  matching start of argument at `COMP_INDEX`
+- Change available completion helper functions to:
+    - `DefaultCompletion()` to return the default completion behavior from a
+      custom completion handler
+    - `DefaultFilenameCompletion()` matching default shell completion
+    - `MatchingFilenameCompletion()` for pattern based filename matching
+
+## Code changes
+
+## Related issues
+
+
 # v0.4.0
 
 ## Key Features
@@ -11,7 +30,6 @@
 
 - Clarify README `opts` struct tag documentation
 - Add note in README for setting up bash completion compatibility in zsh
-
 
 # v0.3.1
 

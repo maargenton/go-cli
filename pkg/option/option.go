@@ -106,29 +106,6 @@ func (opt *T) GetUsage() (usage Description) {
 	}
 }
 
-// GetCompletionUsage returns a value similar to GetUsage(), but using only the
-// long flag if defined, the short flag otherwise.
-func (opt *T) GetCompletionUsage() (usage Description) {
-	var u strings.Builder
-	if opt.Long != "" {
-		fmt.Fprintf(&u, "--%v", opt.Long)
-	} else {
-		fmt.Fprintf(&u, "-%v", opt.Short)
-	}
-
-	if v := opt.getValueDescription(); v != "" {
-		if u.Len() > 0 {
-			u.WriteRune(' ')
-		}
-		u.WriteString(v)
-	}
-
-	return Description{
-		Option:      u.String(),
-		Description: opt.getDescription(),
-	}
-}
-
 func (opt *T) getValueDescription() string {
 	if opt.Type == Bool || opt.Type == Special {
 		return ""
