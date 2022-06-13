@@ -35,6 +35,9 @@ func BashCompletionScript(command string) string {
 // specific cases based on the option field type, and simulates default shell
 // behavior (filename completion) for string types.
 func DefaultCompletion(opt *option.T, w string) []string {
+	if r := getTypeCompletion(opt); len(r) > 0 {
+		return r
+	}
 	return DefaultFilenameCompletion(opt, w)
 }
 
@@ -72,6 +75,9 @@ func MatchingFilenameCompletion(opt *option.T, pattern string, w string) (r []st
 }
 
 func getTypeCompletion(opt *option.T) (r []string) {
+	if opt == nil {
+		return
+	}
 	var v = reflect.New(opt.ValueType).Interface()
 	if v, ok := v.(enum.Type); ok {
 		for _, vv := range v.EnumValues() {
