@@ -38,7 +38,7 @@ func Run(cmd *Command) {
 		cmd.ProcessName = fileutils.Base(os.Args[0])
 	}
 	if cmd.ProcessArgs == nil {
-		cmd.ProcessArgs = os.Args
+		cmd.ProcessArgs = os.Args[1:]
 	}
 	cmd.ConsoleWidth = consoleWidth()
 	cmd.SetProcessEnv(os.Environ())

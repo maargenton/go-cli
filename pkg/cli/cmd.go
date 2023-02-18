@@ -14,8 +14,10 @@ import (
 // Command is the representation of a runnable command, with reference to a
 // runnable command attached to an options struct
 type Command struct {
-	Handler     Handler
-	Description string
+	Name        string    // Sub-command name, ignored for root command
+	Description string    // Command description for help display
+	Handler     Handler   // Options recipient and handler for the command
+	SubCommands []Command // Optional sub-commands
 
 	ProcessName       string
 	ProcessArgs       []string
@@ -78,6 +80,13 @@ func (cmd *Command) SetProcessEnv(env []string) {
 // decodes the command-line and run the command.
 func (cmd *Command) Run() error {
 
+	if len(cmd.SubCommands) > 0 {
+		var sub = cmd.MatchSubCommand()
+		if sub != nil {
+			return sub.Run()
+		}
+	}
+
 	if err := cmd.initialize(); err != nil {
 		return err
 	}
@@ -110,7 +119,7 @@ func (cmd *Command) Run() error {
 	if err := cmd.opts.ApplyEnv(cmd.ProcessEnv); err != nil {
 		return err
 	}
-	if err := cmd.opts.ApplyArgs(cmd.ProcessArgs[1:]); err != nil {
+	if err := cmd.opts.ApplyArgs(cmd.ProcessArgs); err != nil {
 		return err
 	}
 
@@ -119,6 +128,31 @@ func (cmd *Command) Run() error {
 	}
 
 	return nil
+}
+
+// MatchSubCommand looks at the command ProcessArgs first argument and returns a
+// matching sub-command if any.
+func (cmd *Command) MatchSubCommand() *Command {
+	if len(cmd.ProcessArgs) < 1 {
+		return nil
+	}
+
+	var cmdName = cmd.ProcessArgs[0]
+	var args = cmd.ProcessArgs[1:]
+
+	for _, sub := range cmd.SubCommands {
+		if sub.Name == cmdName {
+			sub.ProcessName = cmd.ProcessName
+			sub.ProcessArgs = args
+			sub.ProcessEnv = cmd.ProcessEnv
+			sub.ConsoleWidth = cmd.ConsoleWidth
+			sub.DisableCompletion = cmd.DisableCompletion
+
+			return &sub
+		}
+	}
+	return nil
+
 }
 
 // Usage returns a string containign the usage for the command. The display name

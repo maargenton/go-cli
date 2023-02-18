@@ -63,7 +63,7 @@ func TestCommandRun(t *testing.T) {
 		var c = cmd.Handler.(*myCmd)
 
 		t.Run("when calling run with valid arguments", func(t *testing.T) {
-			cmd.ProcessArgs = []string{"command-name", "-v", "--arg", "123"}
+			cmd.ProcessArgs = []string{"-v", "--arg", "123"}
 			err := cmd.Run()
 
 			t.Run("then the fields are set and the command is run", func(t *testing.T) {
@@ -75,7 +75,7 @@ func TestCommandRun(t *testing.T) {
 		})
 
 		t.Run("when the command handler returns an error", func(t *testing.T) {
-			cmd.ProcessArgs = []string{"command-name", "-v", "--arg", "123"}
+			cmd.ProcessArgs = []string{"-v", "--arg", "123"}
 			c.err = fmt.Errorf("myError")
 			err := cmd.Run()
 
@@ -85,7 +85,7 @@ func TestCommandRun(t *testing.T) {
 		})
 
 		t.Run("when calling run with invalid arguments", func(t *testing.T) {
-			cmd.ProcessArgs = []string{"command-name", "-v", "--args", "123"}
+			cmd.ProcessArgs = []string{"-v", "--args", "123"}
 			err := cmd.Run()
 
 			t.Run("then an error is returned", func(t *testing.T) {
@@ -93,7 +93,7 @@ func TestCommandRun(t *testing.T) {
 			})
 		})
 		t.Run("when calling run with invalid environment value", func(t *testing.T) {
-			cmd.ProcessArgs = []string{"command-name", "-v", "--arg", "123"}
+			cmd.ProcessArgs = []string{"-v", "--arg", "123"}
 			cmd.ProcessEnv = map[string]string{
 				"TEST_ARG": "argument",
 			}

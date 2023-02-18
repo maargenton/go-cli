@@ -8,6 +8,7 @@ require (
 	github.com/maargenton/go-testpredicate v1.3.0
 	golang.org/x/term v0.12.0
 	golang.org/x/tools v0.13.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (

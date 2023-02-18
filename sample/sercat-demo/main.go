@@ -1,11 +1,11 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/maargenton/go-cli"
 	"github.com/maargenton/go-cli/pkg/option"
+	"gopkg.in/yaml.v3"
 )
 
 func main() {
@@ -66,7 +66,7 @@ func (options *sercatCmd) Run() error {
 		options.Format = &v
 	}
 
-	d, err := json.Marshal(options)
+	d, err := yaml.Marshal(options)
 	if err != nil {
 		return err
 	}

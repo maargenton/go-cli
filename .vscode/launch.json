@@ -29,6 +29,16 @@
                 "--timestamp",
                 "/dev/tty.Bluetooth-Incoming-Port",
             ]
+        },
+        {
+            "name": "subcmd-demo",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/sample/subcmd-demo",
+            "args": [
+                "migrate",
+            ]
         }
     ]
 }

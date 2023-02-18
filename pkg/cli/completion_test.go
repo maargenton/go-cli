@@ -114,7 +114,7 @@ func TestCommandRunCompletion(t *testing.T) {
 		var c = cmd.Handler.(*compCmd)
 
 		t.When("calling Run() with completion request and partial option flag", func(t *bdd.T) {
-			cmd.ProcessArgs = []string{"command-name", "-v", "--o"}
+			cmd.ProcessArgs = []string{"-v", "--o"}
 			cmd.ProcessEnv = map[string]string{
 				"COMP_WORD":  "--o",
 				"COMP_INDEX": "2",
@@ -135,7 +135,7 @@ func TestCommandRunCompletion(t *testing.T) {
 		})
 
 		t.When("calling Run() with a partial option argument", func(t *bdd.T) {
-			cmd.ProcessArgs = []string{"command-name", "-v", "--option", "co"}
+			cmd.ProcessArgs = []string{"-v", "--option", "co"}
 			cmd.ProcessEnv = map[string]string{
 				"COMP_WORD":  "co",
 				"COMP_INDEX": "3",
@@ -215,7 +215,7 @@ func TestCommandRunCompletion(t *testing.T) {
 		})
 
 		t.When("calling Run() with missing option argument", func(t *bdd.T) {
-			cmd.ProcessArgs = []string{"command-name", "-v", "--option"}
+			cmd.ProcessArgs = []string{"-v", "--option"}
 			cmd.ProcessEnv = map[string]string{
 				"COMP_WORD":  "",
 				"COMP_INDEX": "3",
@@ -240,7 +240,7 @@ func TestCommandRunCompletionDebuf(t *testing.T) {
 		t.Setenv("COMPLETION_DEBUG_OUTPUT", filename)
 
 		t.When("calling Run() with completion request", func(t *bdd.T) {
-			cmd.ProcessArgs = []string{"command-name", "-v", "--o"}
+			cmd.ProcessArgs = []string{"-v", "--o"}
 			cmd.ProcessEnv = map[string]string{
 				"COMP_WORD":  "--o",
 				"COMP_INDEX": "2",

@@ -73,12 +73,13 @@ func MatchingFilenameCompletion(opt *option.T, pattern string, w string) (r []st
 
 func (cmd *Command) handleCompletionRequest() bool {
 	i, w := cmd.getCompletionRequest()
-	if i == 0 {
+	if i < 0 {
 		return false
 	}
 
 	// Trim process arguments past the completion point
 	var args = cmd.ProcessArgs[:]
+	// i = i - 1 // adjust for cmd.ProcessArgs skipping argv[0]
 	if i > 0 && i < len(args) {
 		args = args[:i]
 	}
@@ -118,15 +119,16 @@ func (cmd *Command) handleCompletionRequest() bool {
 func (cmd *Command) getCompletionRequest() (index int, word string) {
 	var env = cmd.ProcessEnv
 
+	index = -1
 	word = env["COMP_WORD"]
 	if ii, ok := env["COMP_INDEX"]; ok {
 		if ii, err := strconv.ParseInt(ii, 0, 0); err == nil {
-			index = int(ii)
+			index = int(ii) - 1
 		}
 	}
 
 	var args = cmd.ProcessArgs[:]
-	if index == 0 || index >= len(args) || !strings.HasPrefix(args[index], word) {
+	if index < 0 || index >= len(args) || !strings.HasPrefix(args[index], word) {
 		word = ""
 	}
 	return
