@@ -49,7 +49,7 @@ func Run(cmd *Command) {
 
 	} else if errors.Is(err, cli.ErrHelpRequested) {
 		fmt.Print(cmd.Usage())
-
+		os.Exit(1)
 	} else if errors.Is(err, cli.ErrVersionRequested) {
 		var version = cmd.Version()
 		if version != "" {

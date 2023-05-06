@@ -123,6 +123,9 @@ func (cmd *Command) Run() error {
 		return err
 	}
 
+	if cmd.Handler == nil {
+		return ErrHelpRequested
+	}
 	if err := cmd.Handler.Run(); err != nil {
 		return err
 	}

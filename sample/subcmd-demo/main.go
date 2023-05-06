@@ -9,7 +9,7 @@ import (
 
 func main() {
 	cli.Run(&cli.Command{
-		Handler:     &ServerCmd{},
+		// Handler:     &ServerCmd{},
 		Description: "API server for demo service",
 
 		SubCommands: []cli.Command{

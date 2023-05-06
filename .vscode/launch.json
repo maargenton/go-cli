@@ -37,7 +37,7 @@
             "mode": "auto",
             "program": "${workspaceFolder}/sample/subcmd-demo",
             "args": [
-                "migrate",
+                // "migrate",
             ]
         }
     ]

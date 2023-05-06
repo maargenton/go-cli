@@ -229,6 +229,56 @@ completion machinery can be disabled by setting `cmd.DisableCompletion` on the
 root command.
 
 
+## Sub-command support
+
+The `go-cli` package also provides support for sub-commands definition, to build
+a command-line interface similar to `git`, `go` and `kubectl`,  where a single
+binary exposes a number of related actions.
+
+Sub-commands are defined by adding multiple named commands to the `SubCommands`
+field of the main command definition:
+
+```
+func main() {
+    cli.Run(&cli.Command{
+        SubCommands: []cli.Command{
+            {
+                Name:        "migrate",
+                Description: "run DB migration",
+                Handler:     &MigrateCmd{},
+            },
+            ....
+        },
+    })
+}
+```
+
+### No prefix argument
+
+When defining sub-commands with `go-cli`, the sequence of sub-commands verbs and
+noun are expected to appear at the beginning of the command-line, before any
+option or argument. This is in contrast to e.g. `git` which allows a subset of
+global arguments to appear before the sub-command.
+
+With `go-cli`, each sub-command has its own set of command-line options and
+arguments, defined in the command struct. Options that are shared between some
+or all sub-commands can be defined on a shared nested struct.
+
+
+### Bare command with sub-commands
+
+In general, command-line utilities either have no sub-commands or only
+sub-commands. With `gp-cli`, you can have both a default behavior and a list of
+sub-command to provide additional related functionalities.
+
+
+### Help
+
+In general, utilities with sub-commands provide help through an `help`
+sub-command that precede the specific command the inquiry is about. With
+`go-cli`, help is by default requested with the `--help` option.
+
+
 ## Enum support
 
 To help with command-line handling of enumerated types, the `go-cli` package

@@ -23,6 +23,9 @@ type Set struct {
 // that can be set through commandline arguments
 func NewOptionSet(v interface{}) (*Set, error) {
 	var pv = reflect.ValueOf(v)
+	if !pv.IsValid() {
+		return &Set{}, nil
+	}
 	if pv.Kind() != reflect.Ptr || pv.IsNil() || pv.Elem().Kind() != reflect.Struct {
 		return nil, fmt.Errorf("invalid argument of type '%v', non-null pointer to struct expected", pv.Type())
 	}
