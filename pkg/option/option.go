@@ -32,6 +32,8 @@ type T struct {
 	Default     string
 	Env         string
 	Sep         string // optional separator
+	KeepSpaces  bool
+	KeepEmpty   bool
 	Description string
 	ValueName   string // optional name for the value
 	Position    int    // set to non-zero for fields capturing positional arguments
@@ -161,6 +163,11 @@ func (opt *T) SetBool() {
 func (opt *T) SetValue(s string) error {
 	var fv = opt.opts.target.FieldByIndex(opt.Index)
 	var err error
+
+	if !opt.KeepSpaces {
+		s = strings.TrimSpace(s)
+	}
+
 	if opt.Type == Ptr {
 		err = opt.setPtrValue(fv, s)
 	} else if opt.Type == Slice {
@@ -168,6 +175,7 @@ func (opt *T) SetValue(s string) error {
 	} else {
 		err = value.Parse(fv.Addr().Interface(), s)
 	}
+
 	if err != nil {
 		err = fmt.Errorf("failed to set value for '%v': %w", opt.Name(), err)
 	}
@@ -190,6 +198,12 @@ func (opt *T) setSliceValue(fv reflect.Value, s string) error {
 	} else if opt.Sep != "" {
 		var updatedSlice = fv
 		for _, vs := range splitSliceValues(s, opt.Sep) {
+			if !opt.KeepSpaces {
+				vs = strings.TrimSpace(vs)
+			}
+			if !opt.KeepEmpty && vs == "" {
+				continue
+			}
 			var v = reflect.New(fv.Type().Elem())
 			if err := value.Parse(v.Interface(), vs); err != nil {
 				return err
@@ -264,6 +278,10 @@ func (opt *T) parseOptsTag(tag string) error {
 			opt.Sep = v
 		} else if k == "name" {
 			opt.ValueName = v
+		} else if k == "keep-spaces" {
+			opt.KeepSpaces = true
+		} else if k == "keep-empty" {
+			opt.KeepEmpty = true
 		} else {
 			return fmt.Errorf("invalid tag in opts: '%v'", k)
 		}

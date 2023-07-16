@@ -133,8 +133,17 @@ The `opts` tag can consist of:
 - `default:` : a default value for the field if not specified on the
   command-line
 - `env:` : the name of an environment variable that can override the default
-- `sep:`: a separator for fields that can accept multiple values. By default,
-  multiple values must be specified by repeating the option flag multiple times.
+- `sep:`: a list separator characters for fields that can accept multiple
+  values. To use a comma or colon as separator, those characters must be escaped
+  with a double-backslash (`\\,` or `\\:`). To use spaces and newlines as
+  separator, the special value `\\s` can be used. Unless a separator is
+  specified with this option, additional values must be specified by repeating
+  the option flag multiple times.
+- `keep-spaces` : when specified with no value, this option preserves the spaces
+  around the argument values, that would otherwise be trimmed by default.
+- `keep-empty` : for fields thar accept multiple values using a separator, this
+  option preserve empty values after splitting and trimming, that would
+  otherwise be dropped by default.
 - `name:`: the display name for the value, used when printing out description of
   the field.
 
@@ -160,9 +169,23 @@ standard interface, and includes:
 
 Unless otherwise initialized, all pointer fields are initialized to `nil`, all
 slice fields are initialized to an empty slice, and all scalar fields are
-initialized to their built-in zero value. If the built-in zero value is a valid
-value and if the command needs to determine if an option has been provided, a
+initialized to their built-in zero value. If the command needs to differentiate
+between the built-in zero value of a scalar field and a specified zero value, a
 pointer type should be used and checked against `nil`.
+
+By default, slice field values must be provided by repeating the option flag
+multiple times, once of each value. If a separator is defined (`sep:`), multiple
+or all values can be provided with one command-line argument. To provide multiple values through an environment variable, a separated must be defined.
+
+> New in v0.5.0: A breaking change has been introduced to better handle lists of
+> values and spaces around values. Prior behavior can be restores with the
+> `keep-spaces` option for all fields and `keep-empty` for lists. With this new
+> behavior, spaces around the values are automatically trimmed, and empty values
+> after trimming are dropped from value lists. In effect, this allows for
+> trailing separators to be ignored, and for list values to be specified with
+> additional spaces around the separators, including newlines.  Note that, even
+> with `keep-empty`, if the last character is a separator, the last empty values
+> is always drop, as was the case in prior versions.
 
 In a command-line interface, all option flags are optional. Required options
 should use positional arguments. Positional arguments are required unless

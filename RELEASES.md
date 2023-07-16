@@ -1,4 +1,4 @@
-# v0.5.0
+# v0.5.0-rc
 
 ## Key Features
 
@@ -11,6 +11,12 @@
       custom completion handler
     - `DefaultFilenameCompletion()` matching default shell completion
     - `MatchingFilenameCompletion()` for pattern based filename matching
+- Surrounding spaces are automatically trimmed from values unless `keep-spaces`
+  option is specified on the argument
+- List values automatically drop empty values unless `keep-empty` option is
+  specified on the argument. Note that even with `keep-empty`, if the last
+  character is a separator, the last empty values is always drop, as was the
+  case in the prior versions.
 
 ## Code changes
 
