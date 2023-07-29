@@ -429,6 +429,7 @@ def check_release_build_details()
         (release_branch ? "potential release branch" : "not a release branch")
 
     return false if info.mtag || !release_branch
+    return true
 end
 
 def setup_release_build()
