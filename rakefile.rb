@@ -171,14 +171,21 @@ class BuildInfo
     def remote()    return @remote  ||= _remote()   end
     def commit()    return @commit  ||= _commit()   end
     def dir()       return @dir     ||= _dir()      end
+    def branch()    return @branch  ||= _branch()   end
+    def mtag()      return @mtag    ||= _mtag()     end
+
+    def on_release_branch(b, v)
+        return b == DEFAULT_BRANCH || (!v.nil? && v.start_with?("#{b}."))
+    end
 
     def reset()
-        @name = @version = @remote = @commit = @dir = nil
+        @name = @version = @remote = @commit = @dir = @branch = @mtag = nil
     end
 
     private
     def _commit()   return git('rev-parse HEAD')               end
     def _dir()      return git('rev-parse --show-toplevel')    end
+    def _branch()   return git("rev-parse --abbrev-ref HEAD").strip.gsub(/[^A-Za-z0-9\._-]+/, '-') end
 
     def _name()
         remote_basename = File.basename(remote() || "" )
@@ -190,7 +197,7 @@ class BuildInfo
         v, b, n, g = _info()                    # Extract base info from git branch and tags
         m = _mtag()                             # Detect locally modified files
         v = _patch(v) if n > 0 || !m.nil?       # Increment patch if needed to to preserve semver orderring
-        b = 'rc' if _is_default_branch(b, v)    # Rename branch to 'rc' for default branch
+        b = 'rc' if on_release_branch(b, v)     # Rename branch fragment to 'rc' for default or release maintenance branch
         return v if b == 'rc' && n == 0 && m.nil?
         return "#{v}-" + [b, n, g, m].compact().join('.')
     end
@@ -202,20 +209,19 @@ class BuildInfo
         pattern = WINDOWS ? '"v[0-9]*.[0-9]*.[0-9]*"' : "'v[0-9]*.[0-9]*.[0-9]*'"
         d = git("describe --always --tags --long --match #{pattern}").strip.split('-')
         if d.count != 0
-            b = git("rev-parse --abbrev-ref HEAD").strip.gsub(/[^A-Za-z0-9\._-]+/, '-')
-            return ['v0.0.0', b, git("rev-list --count HEAD").strip.to_i, "g#{d[0]}"] if d.count == 1
-            return [d[0], b, d[1].to_i, d[2]] if d.count == 3
+            return ['v0.0.0', branch, git("rev-list --count HEAD").strip.to_i, "g#{d[0]}"] if d.count == 1
+            return [d[0], branch, d[1].to_i, d[2]] if d.count == 3
         end
         return ['v0.0.0', "none", 0, 'g0000000']
     end
 
-    def _is_default_branch(b, v)
-        # Check branch name against common main branch names, and branch name
-        # that matches the beginning of the version strings e.g. 'v1' is
-        # considered a default branch for version 'v1.x.y'.
-        return ["main", "master", "HEAD"].include?(b) ||
-            (!v.nil? && v.start_with?(b))
-    end
+    # def _is_default_branch(b, v)
+    #     # Check branch name against common main branch names, and branch name
+    #     # that matches the beginning of the version strings e.g. 'v1' is
+    #     # considered a default branch for version 'v1.x.y'.
+    #     return ["main", "master", "HEAD"].include?(b) ||
+    #         (!v.nil? && v.start_with?(b))
+    # end
 
     def _patch(v)
         # Increment the patch number by 1, so that intermediate version strings
