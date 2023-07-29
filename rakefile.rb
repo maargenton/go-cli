@@ -51,6 +51,11 @@ end
 desc 'Display inferred build version string'
 task :version do
     puts GoBuild.default.version
+    if check_env_true('ENABLE_RELEASE_BUILD')
+        BuildInfo.default.reset()
+        git('tag -a v0.6.0 -m ""')
+        puts GoBuild.default.version
+    end
 end
 
 desc 'Prototype git operations'
@@ -111,6 +116,9 @@ def generate_release_notes()
     ))
 end
 
+def check_env_true(env)
+    ['1', 't', 'true', 'y', 'yes'].include?((ENV[env] || "0").downcase)
+end
 
 # ----------------------------------------------------------------------------
 # Git helper functions
@@ -163,6 +171,10 @@ class BuildInfo
     def remote()    return @remote  ||= _remote()   end
     def commit()    return @commit  ||= _commit()   end
     def dir()       return @dir     ||= _dir()      end
+
+    def reset()
+        @name = @version = @remote = @commit = @dir = nil
+    end
 
     private
     def _commit()   return git('rev-parse HEAD')               end
@@ -258,7 +270,7 @@ class GoBuild
     def gomod()         return @gomod       ||= _gomod()            end
     def targets()       return @tagets      ||= _targets()          end
     def main_target()   return @main_target ||= _main_target()      end
-    def version()       return @version     ||= @buildinfo.version  end
+    def version()       return @buildinfo.version                   end
     def ldflags()       return @ldflags     ||= _ldflags()          end
 
     def commands(action = 'build')
