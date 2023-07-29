@@ -10,11 +10,14 @@
 # =============================================================================
 
 require 'fileutils'
+require 'json'
 
-task default: [:build]
+DEFAULT_BRANCH="master"
 
 WINDOWS=(RUBY_PLATFORM =~ /mswin|mingw|cygwin/)
 $stdout.sync = true
+
+task default: [:build]
 
 desc 'Display build information'
 task :info do
@@ -50,6 +53,10 @@ task :version do
     puts GoBuild.default.version
 end
 
+desc 'Prototype git operations'
+task :git do
+    git_log("origin/#{DEFAULT_BRANCH}")
+end
 
 desc 'Run all tests and capture results'
 task :test => [:info] do
@@ -105,6 +112,35 @@ def generate_release_notes()
 end
 
 
+# ----------------------------------------------------------------------------
+# Git helper functions
+# ----------------------------------------------------------------------------
+
+def git(cmd)
+    return `git #{cmd} #{WINDOWS ? "2>nul" : "2>/dev/null"}`.strip()
+end
+
+def gh(cmd)
+    return `gh #{cmd} #{WINDOWS ? "2>nul" : "2>/dev/null"}`.strip()
+end
+
+GIT_LOG_SPLIT=/^(?:\((.*?)\))?\s*(.*?)\s*$/
+LogEntry = Struct.new(:msg, :hash, :refs, :tags)
+
+# git_log returns the commit log for either the local HEAD or the specified ref.
+# Each commit is represented by a LogEntry containing the commit message, commit
+# hash, and a list of refs and tags.
+def git_log(ref='')
+    logs = git( "log --pretty=oneline --decorate #{ref}" ).split("\n").map { |l|
+        h, l = l.split(/\s+/, 2)
+        m = GIT_LOG_SPLIT.match(l)
+        rr, l = [m[1] || "", m[2]]
+        tags, refs = rr.split(/,\s*/).partition { |r| r =~ /^tag:\s*(.*)/ }
+        tags = tags.map { |t| t.sub(/^tag:\s*/, '')}
+        LogEntry.new(l, h,refs, tags)
+    }
+    logs.each { |l| puts l.to_h.to_json }
+end
 
 # ----------------------------------------------------------------------------
 # BuildInfo : Helper to extract version inforrmation for git repo
@@ -116,7 +152,7 @@ class BuildInfo
     end
 
     def initialize()
-        if _git('rev-parse --is-shallow-repository') == 'true'
+        if git('rev-parse --is-shallow-repository') == 'true'
             puts "Fetching missing information from remote ..."
             system('git fetch --prune --tags --unshallow')
         end
@@ -129,9 +165,8 @@ class BuildInfo
     def dir()       return @dir     ||= _dir()      end
 
     private
-    def _git( cmd ) return `git #{cmd} #{WINDOWS ? "2>nul" : "2>/dev/null"}`.strip() end
-    def _commit()   return _git('rev-parse HEAD')               end
-    def _dir()      return _git('rev-parse --show-toplevel')    end
+    def _commit()   return git('rev-parse HEAD')               end
+    def _dir()      return git('rev-parse --show-toplevel')    end
 
     def _name()
         remote_basename = File.basename(remote() || "" )
@@ -153,10 +188,10 @@ class BuildInfo
         # 3-part dot-separated sequences starting with a digit,
         # rather than 3 dot-separated numbers.
         pattern = WINDOWS ? '"v[0-9]*.[0-9]*.[0-9]*"' : "'v[0-9]*.[0-9]*.[0-9]*'"
-        d = _git("describe --always --tags --long --match #{pattern}").strip.split('-')
+        d = git("describe --always --tags --long --match #{pattern}").strip.split('-')
         if d.count != 0
-            b = _git("rev-parse --abbrev-ref HEAD").strip.gsub(/[^A-Za-z0-9\._-]+/, '-')
-            return ['v0.0.0', b, _git("rev-list --count HEAD").strip.to_i, "g#{d[0]}"] if d.count == 1
+            b = git("rev-parse --abbrev-ref HEAD").strip.gsub(/[^A-Za-z0-9\._-]+/, '-')
+            return ['v0.0.0', b, git("rev-list --count HEAD").strip.to_i, "g#{d[0]}"] if d.count == 1
             return [d[0], b, d[1].to_i, d[2]] if d.count == 3
         end
         return ['v0.0.0', "none", 0, 'g0000000']
@@ -187,7 +222,7 @@ class BuildInfo
     def _mtag()
         # Generate a `.mXXXXXXXX` fragment based on latest mtime of modified
         # files in the index. Returns `nil` if no files are locally modified.
-        status = _git("status --porcelain=2 --untracked-files=no")
+        status = git("status --porcelain=2 --untracked-files=no")
         files = status.lines.map {|l| l.strip.split(/ +/).last }.map { |n| n.split(/\t/).first }
         t = files.map { |f| File.mtime(f).to_i rescue nil }.compact.max
         return t.nil? ? nil : "m%08x" % t
@@ -195,7 +230,7 @@ class BuildInfo
 
     GIT_SSH_REPO = /git@(?<host>[^:]+):(?<path>.+).git/
     def _remote()
-        remote = _git('remote get-url origin')
+        remote = git('remote get-url origin')
         m = GIT_SSH_REPO.match(remote)
         return remote if m.nil?
 
