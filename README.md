@@ -6,7 +6,7 @@ A library to define command line interfaces in Go.
   https://img.shields.io/github/v/tag/maargenton/go-cli?color=blue&label=latest&logo=go&logoColor=white&sort=semver)](
   https://pkg.go.dev/github.com/maargenton/go-cli)
 [![Build](
-  https://img.shields.io/github/workflow/status/maargenton/go-cli/build?label=build&logo=github&logoColor=aaaaaa)](
+  https://img.shields.io/github/actions/workflow/status/maargenton/go-cli/build.yaml?branch=master&label=build&logo=github&logoColor=aaaaaa)](
   https://github.com/maargenton/go-cli/actions?query=branch%3Amaster)
 [![Codecov](
   https://img.shields.io/codecov/c/github/maargenton/go-cli?label=codecov&logo=codecov&logoColor=aaaaaa&token=1JFLIu042X)](
