@@ -20,7 +20,7 @@ $stdout.sync = true
 task default: [:build]
 
 desc 'Display build information'
-task :info => [:prepare_release_build] do
+task :info => [] do
     puts "Module:  #{GoBuild.default.gomod}"
     puts "Version: #{GoBuild.default.version}"
     puts "Source:  #{File.join(BuildInfo.default.remote,'tree',BuildInfo.default.commit[0,10])}"
@@ -49,47 +49,29 @@ end
 
 
 desc 'Display inferred build version string'
-task :version => [:prepare_release_build] do
+task :version => [] do
     puts GoBuild.default.version
-    puts BuildInfo.default.branch
-    if check_env_true('ENABLE_RELEASE_BUILD')
-        BuildInfo.default.reset()
-        git('tag -a v0.6.0 -m ""')
-        puts GoBuild.default.version
+end
+
+# Internal task to override local environment before making a release
+task :setup_release_build do
+    if check_release_build()
+        setup_release_build()
     end
+end
+
+desc 'Prototype automatic release generation'
+task :'test-release' => [:info, :setup_release_build] do
 end
 
 desc 'Prototype git operations'
-task :git => [:prepare_release_build] do
+task :git => [] do
     git_log("origin/#{DEFAULT_BRANCH}")
 end
 
-task :prepare_release_build do
-    if !check_env_true('ENABLE_RELEASE_BUILD')
-        puts "* ENABLE_RELEASE_BUILD has been set, checking for potential release build ..."
-        if !check_release_build()
-            puts "* Conditions not met for release build!"
-        else
-            puts "* ---8--- Generating a release build ---8---"
-        end
-    end
-end
-
-def check_release_build()
-    info = BuildInfo.default
-
-    v = info.version
-    puts "* Base version is '#{v}'" + (info.mtag ? ", not a clean checkout" : "")
-
-    b = info.branch
-    release_branch = info.on_release_branch(b, v)
-    puts "* Branch is '#{b}', " +
-        (release_branch ? "potential release branch" : "not a release branch")
-    return false if !release_branch
-end
 
 desc 'Run all tests and capture results'
-task :test => [:prepare_release_build, :info] do
+task :test => [:info, :setup_release_build] do
     FileUtils.makedirs( ['./build/artifacts'] )
     success = go_test()
     go_testreport('build/go-test-result.json',
@@ -107,7 +89,7 @@ task :test => [:prepare_release_build, :info] do
 end
 
 desc 'Build and publish both release archive and associated container image'
-task :build => [:prepare_release_build, :info, :test] do
+task :build => [:info, :setup_release_build, :test] do
     # Nothing to do here
     generate_release_notes()
 end
@@ -419,6 +401,41 @@ end
 # ----------------------------------------------------------------------------
 # Release notes generator
 # ----------------------------------------------------------------------------
+
+def check_release_build()
+    return if !check_env_true('ENABLE_RELEASE_BUILD')
+    puts
+    puts "* ENABLE_RELEASE_BUILD=1, checking for potential release build ..."
+    if !check_release_build_details()
+        puts "* Conditions are not met for release build!"
+        puts
+        return false
+    end
+
+    puts "* ---8--- Generating a release build ---8---"
+    puts
+    return true
+end
+
+def check_release_build_details()
+    info = BuildInfo.default
+
+    v = info.version
+    puts "* Base version is '#{v}'" + (info.mtag ? ", not a clean checkout" : "")
+
+    b = info.branch
+    release_branch = info.on_release_branch(b, v)
+    puts "* Branch is '#{b}', " +
+        (release_branch ? "potential release branch" : "not a release branch")
+
+    return false if info.mtag || !release_branch
+end
+
+def setup_release_build()
+    # Set local tag matching target release version
+    # Reset BuildInfo for new version to take effect
+end
+
 
 def extract_release_notes(version, prefix:nil, input:nil, checksums:nil)
     rn = ""
