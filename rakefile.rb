@@ -13,6 +13,7 @@ require 'fileutils'
 require 'json'
 
 DEFAULT_BRANCH="master"
+RELEASE_NOTES="RELEASES.md"
 
 WINDOWS=(RUBY_PLATFORM =~ /mswin|mingw|cygwin/)
 $stdout.sync = true
@@ -66,7 +67,81 @@ end
 
 desc 'Prototype git operations'
 task :git => [] do
-    git_log("origin/#{DEFAULT_BRANCH}")
+    commits = git_log("origin/#{DEFAULT_BRANCH}")
+    commits.each { |l| puts l.to_h.to_json }
+
+    puts "---"
+
+    prs = gh_pr_list()
+    prs.each { |l| puts l.to_h.to_json }
+
+    puts "---"
+
+    issues = gh_issue_list()
+    issues.each { |l| puts l.to_h.to_json }
+
+    puts "---"
+
+    unrealeased_commits = []
+    commits.each { |commit|
+        break if commit.tags.any? { |v| v =~ /v\d+\.\d+\.\d+/ }
+        unrealeased_commits.push(commit)
+    }
+    unreleased_prs = []
+    unrealeased_commits.each do |commit|
+        commit.pr = prs.find{ |pr| pr.merge_commit == commit.hash}
+        unreleased_prs.push( commit.pr ) if commit.pr
+    end
+
+    unrealeased_commits.each { |l| puts l.to_h.to_json }
+    unreleased_prs.each { |l| puts l.to_h.to_json }
+end
+
+desc 'List unreleased PRs and related issues in releasee notes format'
+task :release_notes => [] do
+    puts "Fetching PR list ..."
+    commits = git_log("origin/#{DEFAULT_BRANCH}")
+    prs = gh_pr_list()
+    issues = gh_issue_list()
+
+    unrealeased_commits = []
+    commits.each { |commit|
+        break if commit.tags.any? { |v| v =~ /v\d+\.\d+\.\d+/ }
+        unrealeased_commits.push(commit)
+    }
+    unreleased_prs = []
+    unrealeased_commits.each do |commit|
+        commit.pr = prs.find{ |pr| pr.merge_commit == commit.hash}
+        unreleased_prs.push( commit.pr ) if commit.pr
+    end
+
+    puts "Fetching PR details ..."
+    unreleased_prs.each do |pr|
+        details = gh_pr_view(pr.number, :number, :title, :body, :comments, :commits)
+        text = [details["title"], details["body"]]
+        details["comments"].each do |comment|
+            text.push(comment["body"])
+        end
+        details["commits"].each do |commit|
+            text.push(commit["messageHeadline"])
+            text.push(commit["messageBody"])
+        end
+        pr.linked_issues = extract_issue_references(text)
+    end
+
+    puts
+    unreleased_prs.each do |pr|
+        puts "- #{pr.title} ([##{pr.number}](#{pr.url}))"
+    end
+    puts
+    puts "## Related issues"
+    puts
+    unreleased_prs.map{|pr| pr.linked_issues}.flatten.sort.uniq.each do |issue_number|
+        issue = issues.find{ |issue| issue.number == issue_number}
+        if issue
+            puts "- #{issue.title} ([##{issue.number}](#{issue.url}))"
+        end
+    end
 end
 
 
@@ -136,17 +211,17 @@ def git(cmd)
 end
 
 def gh(cmd)
-    return `gh #{cmd} #{WINDOWS ? "2>nul" : "2>/dev/null"}`.strip()
+    return `gh #{cmd}`.strip()  #{WINDOWS ? "2>nul" : "2>/dev/null"}`.strip()
 end
 
 GIT_LOG_SPLIT=/^(?:\((.*?)\))?\s*(.*?)\s*$/
-LogEntry = Struct.new(:msg, :hash, :refs, :tags)
+LogEntry = Struct.new(:msg, :hash, :refs, :tags, :pr)
 
 # git_log returns the commit log for either the local HEAD or the specified ref.
 # Each commit is represented by a LogEntry containing the commit message, commit
 # hash, and a list of refs and tags.
-def git_log(ref='')
-    logs = git( "log --pretty=oneline --decorate #{ref}" ).split("\n").map { |l|
+def git_log(ref='', limit: 100)
+    logs = git( "log --pretty=oneline --decorate #{ref} --max-count=#{limit}" ).split("\n").map { |l|
         h, l = l.split(/\s+/, 2)
         m = GIT_LOG_SPLIT.match(l)
         rr, l = [m[1] || "", m[2]]
@@ -154,8 +229,53 @@ def git_log(ref='')
         tags = tags.map { |t| t.sub(/^tag:\s*/, '')}
         LogEntry.new(l, h,refs, tags)
     }
-    logs.each { |l| puts l.to_h.to_json }
 end
+
+PR = Struct.new(:number, :title, :url, :state, :merge_commit, :base_ref, :linked_issues)
+
+# gh_pr_list returns a list of pull request as PR objects, with essential fields
+# to link them back to the git comit log. Because of GRaphQL limitations, the
+# `linked_issues` field is kept nil to signal that it has not been pr=opulated;
+# attaching the linked_issues requires an addition step per PR.
+def gh_pr_list(state: :merged, limit: 100)
+    response = gh("pr list --state #{state} --limit #{limit} --json number,title,url,state,mergeCommit,baseRefName")
+    prs = JSON.parse(response)
+    prs.map { |pr|
+        PR.new(pr["number"], pr["title"], pr["url"], pr["state"].downcase.to_sym,
+        (pr["mergeCommit"] || {})["oid"],  pr["baseRefName"], nil)
+    }
+end
+
+def gh_pr_view(pr, *properties)
+    response = gh("pr view #{pr} --json #{properties.join(',')}")
+    JSON.parse(response)
+end
+
+ISSUES_REF=/\b(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\b\s*#(\d+)/i
+
+def extract_issue_references(fragments)
+    issues = []
+    fragments.each do |fragment|
+        mm = fragment.scan(ISSUES_REF)
+        issues.concat( mm.flatten.map {|m| m.to_i} )
+    end
+    issues.sort.uniq
+end
+
+
+Issue = Struct.new(:number, :title, :url, :state)
+
+# gh_issue_list returns a list of issues as Issue objects, with basic fields.
+def gh_issue_list(state: :closed, limit: 100)
+    response = gh("issue list --state #{state} --limit #{limit} --json number,title,url,state")
+    issues = JSON.parse(response)
+    issues.map { |issue|
+        Issue.new(issue["number"], issue["title"], issue["url"], issue["state"].downcase.to_sym)
+    }
+end
+
+
+
 
 # ----------------------------------------------------------------------------
 # BuildInfo : Helper to extract version inforrmation for git repo
@@ -423,7 +543,6 @@ end
 
 # compare_semver("v0.4.1-rc.8.g6f6731e.3.4", "v0.4.1-rc.8.g6f6731e.3.4")
 
-
 def check_release_build()
     return if !check_env_true('ENABLE_RELEASE_BUILD')
     puts
@@ -451,6 +570,11 @@ def check_release_build_details()
         (release_branch ? "potential release branch" : "not a release branch")
 
     return false if info.mtag || !release_branch
+
+    # Get all versions from release notes
+    # filter to keep versions greater than current
+    # Fail if none or more than 1
+
     return true
 end
 
