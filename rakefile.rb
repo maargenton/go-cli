@@ -525,21 +525,25 @@ end
 
 def compare_semver(a, b)
     def parse(v)
-        vv = (v[1..] if v[0] == 'v' || v).split('-', 2)
+        vv = (v[1..-1] if v[0] == 'v' || v).split('-', 2)
         return ((vv[0].split('.').map{|v| v.to_i}) + [0]*3)[0...3] +
             ((vv[1] || "+").split('+', 2))[0].split('.').map {|v| Integer(v, exception: false) || v}
     end
     def cmp(a,b)
         a <=> b || (a.nil? ? -1 : b.nil? ? 1 : a.is_a?(Numeric) ? -1 : 1)
     end
+    def zip_ex(a, b)
+        a.length >= b.length ? a.zip(b) : b.zip(a).map(&:reverse)
+    end
 
     a, b = parse(a), parse(b)
     c = a[0...3] <=> b[0...3]
     return c if c != 0
     return b.length <=> a.length if a.length == 3 || b.length == 3
-    a[3...].zip(b[3...]).each { |aa,bb| c = cmp(aa,bb); return c if c != 0 }
+    zip_ex(a[3..-1], b[3..-1]).each { |aa,bb| c = cmp(aa,bb); return c if c != 0 }
     return 0
 end
+
 
 # compare_semver("v0.4.1-rc.8.g6f6731e.3.4", "v0.4.1-rc.8.g6f6731e.3.4")
 
