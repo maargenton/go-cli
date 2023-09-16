@@ -1,4 +1,4 @@
-# v0.5.0-rc
+# v0.5.0
 
 ## Key Features
 
@@ -17,10 +17,15 @@
   specified on the argument. Note that even with `keep-empty`, if the last
   character is a separator, the last empty values is always drop, as was the
   case in the prior versions.
+- Update `golang.org/x/tools` package dependency to fix issues in `enumer`
+  command loading some of the standard packages
 
 ## Code changes
 
-## Related issues
+- Simplify completion handling and suggestions ([#9](https://github.com/maargenton/go-cli/pull/9))
+- Update build scripts, fix windows test issues ([#11](https://github.com/maargenton/go-cli/pull/11))
+- Change handling of spaces and empty list values ([#10](https://github.com/maargenton/go-cli/pull/10))
+- Fix `enumer` command package loading issues ([#13](https://github.com/maargenton/go-cli/pull/13))
 
 
 # v0.4.0
