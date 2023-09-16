@@ -67,7 +67,7 @@ end
 
 desc 'Prototype git operations'
 task :git => [] do
-    commits = git_log("origin/#{DEFAULT_BRANCH}")
+    commits = git_log()
     commits.each { |l| puts l.to_h.to_json }
 
     puts "---"
@@ -342,14 +342,6 @@ class BuildInfo
         return ['v0.0.0', "none", 0, 'g0000000']
     end
 
-    # def _is_default_branch(b, v)
-    #     # Check branch name against common main branch names, and branch name
-    #     # that matches the beginning of the version strings e.g. 'v1' is
-    #     # considered a default branch for version 'v1.x.y'.
-    #     return ["main", "master", "HEAD"].include?(b) ||
-    #         (!v.nil? && v.start_with?(b))
-    # end
-
     def _patch(v)
         # Increment the patch number by 1, so that intermediate version strings
         # sort between the last tag and the next tag according to semver.
@@ -543,6 +535,136 @@ def compare_semver(a, b)
     zip_ex(a[3..-1], b[3..-1]).each { |aa,bb| c = cmp(aa,bb); return c if c != 0 }
     return 0
 end
+
+class ReleaseInfo2
+    class << self
+        def default() return @default ||= new end
+    end
+
+    def initialize(release_notes_file = RELEASE_NOTES)
+        @release_notes_file = release_notes_file
+    end
+
+    def _reset()
+        @loaded = false
+    end
+
+    def release()           @loaded ||= load(); return _release() end
+    def release_version()   @loaded ||= load(); return _release_version() end
+    def release_branch()    @loaded ||= load(); return _release_branch() end
+    def release_notes()     @loaded ||= load(); return _release_notes() end
+    def no_release_reason() @loaded ||= load(); return _no_release_reason() end
+
+    private
+    def _load()
+        puts "Loading..."
+    end
+
+    def _load_status()
+        @release_notes = _load_release_note(@release_notes_file)
+        @versions = _sort_versions(@release_notes.keys())
+
+    end
+
+    def _release()
+    end
+
+    def _release_version()
+    end
+
+    def _release_branch()
+    end
+
+    def _release_notes()
+    end
+
+    def _no_release_reason()
+    end
+end
+
+
+class ReleaseInfo
+    class << self
+        def default() return @default ||= new end
+    end
+
+    def initialize(release_notes_file = RELEASE_NOTES)
+        @release_notes_file = release_notes_file
+        reload()
+    end
+
+    def reload()
+        @release_notes = _load_release_note(@release_notes_file)
+        @versions = _sort_versions(@release_notes.keys())
+    end
+
+    def versions()              return @versions   end
+    def release_notes(version)  return @release_notes[version] || [] end
+
+    private
+    def _load_release_note(filename)
+        version = nil
+        return File.readlines(filename).chunk do |l|
+            version = l[2..-1].strip() if l.start_with?( "# "); version
+        end.map do |v, ll|
+            ll.shift
+            ll.shift while ll.first.strip == ""
+            ll.pop while ll.last.strip == ""
+            [v, ll.map { |l| l.rstrip }]
+        end.reverse.to_h
+    end
+
+    def _sort_versions(versions)
+        versions.sort {|a,b| compare_semver(b, a) }
+    end
+
+    def _fetch_pr_info()
+        # Locate PR for current comit
+        # Determine source and destination branches
+    end
+
+    def _fetch_git_comits()
+        @commits = git_log()
+
+
+        prs = gh_pr_list()
+        prs.each { |l| puts l.to_h.to_json }
+
+        puts "---"
+
+        issues = gh_issue_list()
+        issues.each { |l| puts l.to_h.to_json }
+
+        puts "---"
+
+        unrealeased_commits = []
+        commits.each { |commit|
+            break if commit.tags.any? { |v| v =~ /v\d+\.\d+\.\d+/ }
+            unrealeased_commits.push(commit)
+        }
+        unreleased_prs = []
+        unrealeased_commits.each do |commit|
+            commit.pr = prs.find{ |pr| pr.merge_commit == commit.hash}
+            unreleased_prs.push( commit.pr ) if commit.pr
+        end
+
+        unrealeased_commits.each { |l| puts l.to_h.to_json }
+        unreleased_prs.each { |l| puts l.to_h.to_json }
+    end
+end
+
+ReleaseInfo.default.versions
+
+    # def _commit()   return git('rev-parse HEAD')               end
+    # def _dir()      return git('rev-parse --show-toplevel')    end
+    # def _branch()   return git("rev-parse --abbrev-ref HEAD").strip.gsub(/[^A-Za-z0-9\._-]+/, '-') end
+
+    # def _name()
+    #     remote_basename = File.basename(remote() || "" )
+    #     return remote_basename if remote_basename != ""
+    #     return File.basename(File.expand_path("."))
+    # end
+
 
 
 # compare_semver("v0.4.1-rc.8.g6f6731e.3.4", "v0.4.1-rc.8.g6f6731e.3.4")
