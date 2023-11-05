@@ -10,14 +10,18 @@
 # =============================================================================
 
 require 'fileutils'
+require 'json'
 
-task default: [:build]
+DEFAULT_BRANCH="master"
+RELEASE_NOTES="RELEASES.md"
 
 WINDOWS=(RUBY_PLATFORM =~ /mswin|mingw|cygwin/)
 $stdout.sync = true
 
+task default: [:build]
+
 desc 'Display build information'
-task :info do
+task :info => [] do
     puts "Module:  #{GoBuild.default.gomod}"
     puts "Version: #{GoBuild.default.version}"
     puts "Source:  #{File.join(BuildInfo.default.remote,'tree',BuildInfo.default.commit[0,10])}"
@@ -46,13 +50,103 @@ end
 
 
 desc 'Display inferred build version string'
-task :version do
+task :version => [] do
     puts GoBuild.default.version
+end
+
+# Internal task to override local environment before making a release
+task :setup_release_build do
+    if check_release_build()
+        setup_release_build()
+    end
+end
+
+desc 'Prototype automatic release generation'
+task :'test-release' => [:info, :setup_release_build] do
+end
+
+desc 'Prototype git operations'
+task :git => [] do
+    commits = git_log()
+    commits.each { |l| puts l.to_h.to_json }
+
+    puts "---"
+
+    prs = gh_pr_list()
+    prs.each { |l| puts l.to_h.to_json }
+
+    puts "---"
+
+    issues = gh_issue_list()
+    issues.each { |l| puts l.to_h.to_json }
+
+    puts "---"
+
+    unrealeased_commits = []
+    commits.each { |commit|
+        break if commit.tags.any? { |v| v =~ /v\d+\.\d+\.\d+/ }
+        unrealeased_commits.push(commit)
+    }
+    unreleased_prs = []
+    unrealeased_commits.each do |commit|
+        commit.pr = prs.find{ |pr| pr.merge_commit == commit.hash}
+        unreleased_prs.push( commit.pr ) if commit.pr
+    end
+
+    unrealeased_commits.each { |l| puts l.to_h.to_json }
+    unreleased_prs.each { |l| puts l.to_h.to_json }
+end
+
+desc 'List unreleased PRs and related issues in releasee notes format'
+task :release_notes => [] do
+    puts "Fetching PR list ..."
+    commits = git_log("origin/#{DEFAULT_BRANCH}")
+    prs = gh_pr_list()
+    issues = gh_issue_list()
+
+    unrealeased_commits = []
+    commits.each { |commit|
+        break if commit.tags.any? { |v| v =~ /v\d+\.\d+\.\d+/ }
+        unrealeased_commits.push(commit)
+    }
+    unreleased_prs = []
+    unrealeased_commits.each do |commit|
+        commit.pr = prs.find{ |pr| pr.merge_commit == commit.hash}
+        unreleased_prs.push( commit.pr ) if commit.pr
+    end
+
+    puts "Fetching PR details ..."
+    unreleased_prs.each do |pr|
+        details = gh_pr_view(pr.number, :number, :title, :body, :comments, :commits)
+        text = [details["title"], details["body"]]
+        details["comments"].each do |comment|
+            text.push(comment["body"])
+        end
+        details["commits"].each do |commit|
+            text.push(commit["messageHeadline"])
+            text.push(commit["messageBody"])
+        end
+        pr.linked_issues = extract_issue_references(text)
+    end
+
+    puts
+    unreleased_prs.each do |pr|
+        puts "- #{pr.title} ([##{pr.number}](#{pr.url}))"
+    end
+    puts
+    puts "## Related issues"
+    puts
+    unreleased_prs.map{|pr| pr.linked_issues}.flatten.sort.uniq.each do |issue_number|
+        issue = issues.find{ |issue| issue.number == issue_number}
+        if issue
+            puts "- #{issue.title} ([##{issue.number}](#{issue.url}))"
+        end
+    end
 end
 
 
 desc 'Run all tests and capture results'
-task :test => [:info] do
+task :test => [:info, :setup_release_build] do
     FileUtils.makedirs( ['./build/artifacts'] )
     success = go_test()
     go_testreport('build/go-test-result.json',
@@ -70,7 +164,7 @@ task :test => [:info] do
 end
 
 desc 'Build and publish both release archive and associated container image'
-task :build => [:info, :test] do
+task :build => [:info, :setup_release_build, :test] do
     # Nothing to do here
     generate_release_notes()
 end
@@ -104,6 +198,83 @@ def generate_release_notes()
     ))
 end
 
+def check_env_true(env)
+    ['1', 't', 'true', 'y', 'yes'].include?((ENV[env] || "0").downcase)
+end
+
+# ----------------------------------------------------------------------------
+# Git helper functions
+# ----------------------------------------------------------------------------
+
+def git(cmd)
+    return `git #{cmd} #{WINDOWS ? "2>nul" : "2>/dev/null"}`.strip()
+end
+
+def gh(cmd)
+    return `gh #{cmd}`.strip()  #{WINDOWS ? "2>nul" : "2>/dev/null"}`.strip()
+end
+
+GIT_LOG_SPLIT=/^(?:\((.*?)\))?\s*(.*?)\s*$/
+LogEntry = Struct.new(:msg, :hash, :refs, :tags, :pr)
+
+# git_log returns the commit log for either the local HEAD or the specified ref.
+# Each commit is represented by a LogEntry containing the commit message, commit
+# hash, and a list of refs and tags.
+def git_log(ref='', limit: 100)
+    logs = git( "log --pretty=oneline --decorate #{ref} --max-count=#{limit}" ).split("\n").map { |l|
+        h, l = l.split(/\s+/, 2)
+        m = GIT_LOG_SPLIT.match(l)
+        rr, l = [m[1] || "", m[2]]
+        tags, refs = rr.split(/,\s*/).partition { |r| r =~ /^tag:\s*(.*)/ }
+        tags = tags.map { |t| t.sub(/^tag:\s*/, '')}
+        LogEntry.new(l, h,refs, tags)
+    }
+end
+
+PR = Struct.new(:number, :title, :url, :state, :merge_commit, :base_ref, :linked_issues)
+
+# gh_pr_list returns a list of pull request as PR objects, with essential fields
+# to link them back to the git comit log. Because of GRaphQL limitations, the
+# `linked_issues` field is kept nil to signal that it has not been pr=opulated;
+# attaching the linked_issues requires an addition step per PR.
+def gh_pr_list(state: :merged, limit: 100)
+    response = gh("pr list --state #{state} --limit #{limit} --json number,title,url,state,mergeCommit,baseRefName")
+    prs = JSON.parse(response)
+    prs.map { |pr|
+        PR.new(pr["number"], pr["title"], pr["url"], pr["state"].downcase.to_sym,
+        (pr["mergeCommit"] || {})["oid"],  pr["baseRefName"], nil)
+    }
+end
+
+def gh_pr_view(pr, *properties)
+    response = gh("pr view #{pr} --json #{properties.join(',')}")
+    JSON.parse(response)
+end
+
+ISSUES_REF=/\b(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\b\s*#(\d+)/i
+
+def extract_issue_references(fragments)
+    issues = []
+    fragments.each do |fragment|
+        mm = fragment.scan(ISSUES_REF)
+        issues.concat( mm.flatten.map {|m| m.to_i} )
+    end
+    issues.sort.uniq
+end
+
+
+Issue = Struct.new(:number, :title, :url, :state)
+
+# gh_issue_list returns a list of issues as Issue objects, with basic fields.
+def gh_issue_list(state: :closed, limit: 100)
+    response = gh("issue list --state #{state} --limit #{limit} --json number,title,url,state")
+    issues = JSON.parse(response)
+    issues.map { |issue|
+        Issue.new(issue["number"], issue["title"], issue["url"], issue["state"].downcase.to_sym)
+    }
+end
+
+
 
 
 # ----------------------------------------------------------------------------
@@ -116,7 +287,7 @@ class BuildInfo
     end
 
     def initialize()
-        if _git('rev-parse --is-shallow-repository') == 'true'
+        if git('rev-parse --is-shallow-repository') == 'true'
             puts "Fetching missing information from remote ..."
             system('git fetch --prune --tags --unshallow')
         end
@@ -127,11 +298,21 @@ class BuildInfo
     def remote()    return @remote  ||= _remote()   end
     def commit()    return @commit  ||= _commit()   end
     def dir()       return @dir     ||= _dir()      end
+    def branch()    return @branch  ||= _branch()   end
+    def mtag()      return @mtag    ||= _mtag()     end
+
+    def on_release_branch(b, v)
+        return b == DEFAULT_BRANCH || (!v.nil? && v.start_with?("#{b}."))
+    end
+
+    def reset()
+        @name = @version = @remote = @commit = @dir = @branch = @mtag = nil
+    end
 
     private
-    def _git( cmd ) return `git #{cmd} #{WINDOWS ? "2>nul" : "2>/dev/null"}`.strip() end
-    def _commit()   return _git('rev-parse HEAD')               end
-    def _dir()      return _git('rev-parse --show-toplevel')    end
+    def _commit()   return git('rev-parse HEAD')               end
+    def _dir()      return git('rev-parse --show-toplevel')    end
+    def _branch()   return git("rev-parse --abbrev-ref HEAD").strip.gsub(/[^A-Za-z0-9\._-]+/, '-') end
 
     def _name()
         remote_basename = File.basename(remote() || "" )
@@ -143,7 +324,7 @@ class BuildInfo
         v, b, n, g = _info()                    # Extract base info from git branch and tags
         m = _mtag()                             # Detect locally modified files
         v = _patch(v) if n > 0 || !m.nil?       # Increment patch if needed to to preserve semver orderring
-        b = 'rc' if _is_default_branch(b, v)    # Rename branch to 'rc' for default branch
+        b = 'rc' if on_release_branch(b, v)     # Rename branch fragment to 'rc' for default or release maintenance branch
         return v if b == 'rc' && n == 0 && m.nil?
         return "#{v}-" + [b, n, g, m].compact().join('.')
     end
@@ -153,21 +334,12 @@ class BuildInfo
         # 3-part dot-separated sequences starting with a digit,
         # rather than 3 dot-separated numbers.
         pattern = WINDOWS ? '"v[0-9]*.[0-9]*.[0-9]*"' : "'v[0-9]*.[0-9]*.[0-9]*'"
-        d = _git("describe --always --tags --long --match #{pattern}").strip.split('-')
+        d = git("describe --always --tags --long --match #{pattern}").strip.split('-')
         if d.count != 0
-            b = _git("rev-parse --abbrev-ref HEAD").strip.gsub(/[^A-Za-z0-9\._-]+/, '-')
-            return ['v0.0.0', b, _git("rev-list --count HEAD").strip.to_i, "g#{d[0]}"] if d.count == 1
-            return [d[0], b, d[1].to_i, d[2]] if d.count == 3
+            return ['v0.0.0', branch, git("rev-list --count HEAD").strip.to_i, "g#{d[0]}"] if d.count == 1
+            return [d[0], branch, d[1].to_i, d[2]] if d.count == 3
         end
         return ['v0.0.0', "none", 0, 'g0000000']
-    end
-
-    def _is_default_branch(b, v)
-        # Check branch name against common main branch names, and branch name
-        # that matches the beginning of the version strings e.g. 'v1' is
-        # considered a default branch for version 'v1.x.y'.
-        return ["main", "master", "HEAD"].include?(b) ||
-            (!v.nil? && v.start_with?(b))
     end
 
     def _patch(v)
@@ -187,7 +359,7 @@ class BuildInfo
     def _mtag()
         # Generate a `.mXXXXXXXX` fragment based on latest mtime of modified
         # files in the index. Returns `nil` if no files are locally modified.
-        status = _git("status --porcelain=2 --untracked-files=no")
+        status = git("status --porcelain=2 --untracked-files=no")
         files = status.lines.map {|l| l.strip.split(/ +/).last }.map { |n| n.split(/\t/).first }
         t = files.map { |f| File.mtime(f).to_i rescue nil }.compact.max
         return t.nil? ? nil : "m%08x" % t
@@ -195,7 +367,7 @@ class BuildInfo
 
     GIT_SSH_REPO = /git@(?<host>[^:]+):(?<path>.+).git/
     def _remote()
-        remote = _git('remote get-url origin')
+        remote = git('remote get-url origin')
         m = GIT_SSH_REPO.match(remote)
         return remote if m.nil?
 
@@ -223,7 +395,7 @@ class GoBuild
     def gomod()         return @gomod       ||= _gomod()            end
     def targets()       return @tagets      ||= _targets()          end
     def main_target()   return @main_target ||= _main_target()      end
-    def version()       return @version     ||= @buildinfo.version  end
+    def version()       return @buildinfo.version                   end
     def ldflags()       return @ldflags     ||= _ldflags()          end
 
     def commands(action = 'build')
@@ -341,6 +513,202 @@ end
 # ----------------------------------------------------------------------------
 # Release notes generator
 # ----------------------------------------------------------------------------
+
+
+def compare_semver(a, b)
+    def parse(v)
+        vv = (v[1..-1] if v[0] == 'v' || v).split('-', 2)
+        return ((vv[0].split('.').map{|v| v.to_i}) + [0]*3)[0...3] +
+            ((vv[1] || "+").split('+', 2))[0].split('.').map {|v| Integer(v, exception: false) || v}
+    end
+    def cmp(a,b)
+        a <=> b || (a.nil? ? -1 : b.nil? ? 1 : a.is_a?(Numeric) ? -1 : 1)
+    end
+    def zip_ex(a, b)
+        a.length >= b.length ? a.zip(b) : b.zip(a).map(&:reverse)
+    end
+
+    a, b = parse(a), parse(b)
+    c = a[0...3] <=> b[0...3]
+    return c if c != 0
+    return b.length <=> a.length if a.length == 3 || b.length == 3
+    zip_ex(a[3..-1], b[3..-1]).each { |aa,bb| c = cmp(aa,bb); return c if c != 0 }
+    return 0
+end
+
+class ReleaseInfo2
+    class << self
+        def default() return @default ||= new end
+    end
+
+    def initialize(release_notes_file = RELEASE_NOTES)
+        @release_notes_file = release_notes_file
+    end
+
+    def _reset()
+        @loaded = false
+    end
+
+    def release()           @loaded ||= load(); return _release() end
+    def release_version()   @loaded ||= load(); return _release_version() end
+    def release_branch()    @loaded ||= load(); return _release_branch() end
+    def release_notes()     @loaded ||= load(); return _release_notes() end
+    def no_release_reason() @loaded ||= load(); return _no_release_reason() end
+
+    private
+    def _load()
+        puts "Loading..."
+    end
+
+    def _load_status()
+        @release_notes = _load_release_note(@release_notes_file)
+        @versions = _sort_versions(@release_notes.keys())
+
+    end
+
+    def _release()
+    end
+
+    def _release_version()
+    end
+
+    def _release_branch()
+    end
+
+    def _release_notes()
+    end
+
+    def _no_release_reason()
+    end
+end
+
+
+class ReleaseInfo
+    class << self
+        def default() return @default ||= new end
+    end
+
+    def initialize(release_notes_file = RELEASE_NOTES)
+        @release_notes_file = release_notes_file
+        reload()
+    end
+
+    def reload()
+        @release_notes = _load_release_note(@release_notes_file)
+        @versions = _sort_versions(@release_notes.keys())
+    end
+
+    def versions()              return @versions   end
+    def release_notes(version)  return @release_notes[version] || [] end
+
+    private
+    def _load_release_note(filename)
+        version = nil
+        return File.readlines(filename).chunk do |l|
+            version = l[2..-1].strip() if l.start_with?( "# "); version
+        end.map do |v, ll|
+            ll.shift
+            ll.shift while ll.first.strip == ""
+            ll.pop while ll.last.strip == ""
+            [v, ll.map { |l| l.rstrip }]
+        end.reverse.to_h
+    end
+
+    def _sort_versions(versions)
+        versions.sort {|a,b| compare_semver(b, a) }
+    end
+
+    def _fetch_pr_info()
+        # Locate PR for current comit
+        # Determine source and destination branches
+    end
+
+    def _fetch_git_comits()
+        @commits = git_log()
+
+
+        prs = gh_pr_list()
+        prs.each { |l| puts l.to_h.to_json }
+
+        puts "---"
+
+        issues = gh_issue_list()
+        issues.each { |l| puts l.to_h.to_json }
+
+        puts "---"
+
+        unrealeased_commits = []
+        commits.each { |commit|
+            break if commit.tags.any? { |v| v =~ /v\d+\.\d+\.\d+/ }
+            unrealeased_commits.push(commit)
+        }
+        unreleased_prs = []
+        unrealeased_commits.each do |commit|
+            commit.pr = prs.find{ |pr| pr.merge_commit == commit.hash}
+            unreleased_prs.push( commit.pr ) if commit.pr
+        end
+
+        unrealeased_commits.each { |l| puts l.to_h.to_json }
+        unreleased_prs.each { |l| puts l.to_h.to_json }
+    end
+end
+
+ReleaseInfo.default.versions
+
+    # def _commit()   return git('rev-parse HEAD')               end
+    # def _dir()      return git('rev-parse --show-toplevel')    end
+    # def _branch()   return git("rev-parse --abbrev-ref HEAD").strip.gsub(/[^A-Za-z0-9\._-]+/, '-') end
+
+    # def _name()
+    #     remote_basename = File.basename(remote() || "" )
+    #     return remote_basename if remote_basename != ""
+    #     return File.basename(File.expand_path("."))
+    # end
+
+
+
+# compare_semver("v0.4.1-rc.8.g6f6731e.3.4", "v0.4.1-rc.8.g6f6731e.3.4")
+
+def check_release_build()
+    return if !check_env_true('ENABLE_RELEASE_BUILD')
+    puts
+    puts "* ENABLE_RELEASE_BUILD=1, checking for potential release build ..."
+    if !check_release_build_details()
+        puts "* Conditions are not met for release build!"
+        puts
+        return false
+    end
+
+    puts "* ---8--- Generating a release build ---8---"
+    puts
+    return true
+end
+
+def check_release_build_details()
+    info = BuildInfo.default
+
+    v = info.version
+    puts "* Base version is '#{v}'" + (info.mtag ? ", not a clean checkout" : "")
+
+    b = info.branch
+    release_branch = info.on_release_branch(b, v)
+    puts "* Branch is '#{b}', " +
+        (release_branch ? "potential release branch" : "not a release branch")
+
+    return false if info.mtag || !release_branch
+
+    # Get all versions from release notes
+    # filter to keep versions greater than current
+    # Fail if none or more than 1
+
+    return true
+end
+
+def setup_release_build()
+    # Set local tag matching target release version
+    # Reset BuildInfo for new version to take effect
+end
+
 
 def extract_release_notes(version, prefix:nil, input:nil, checksums:nil)
     rn = ""
