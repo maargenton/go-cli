@@ -564,7 +564,7 @@ func TestApplyArgs_NonFlagArguments(t *testing.T) {
 		A bool          `opts:"-a, --aaa"`
 		D time.Duration `opts:"-d, --duration"`
 		U string        `opts:"arg:1"`
-		V string        `opts:"arg:2"`
+		V string        `opts:"arg:2, default:ddd"`
 		W []string      `opts:"args"`
 	}
 	var tcs = []struct {
@@ -581,6 +581,15 @@ func TestApplyArgs_NonFlagArguments(t *testing.T) {
 				W: []string{"ccc", "ddd"},
 			},
 		},
+		{
+			[]string{"--aaa", "--duration", "5m", "aaa"},
+			command{
+				A: true,
+				D: 5 * time.Minute,
+				U: "aaa",
+				V: "ddd",
+			},
+		},
 	}
 
 	for _, tc := range tcs {
@@ -588,6 +597,9 @@ func TestApplyArgs_NonFlagArguments(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			var cmd command
 			optionSet, err := option.NewOptionSet(&cmd)
+			require.That(t, err).IsNil()
+
+			err = optionSet.ApplyDefaults()
 			require.That(t, err).IsNil()
 
 			err = optionSet.ApplyArgs(tc.args)
@@ -647,6 +659,17 @@ func TestApplyArgs_NonFlagArguments_Errors(t *testing.T) {
 			}{},
 			"failed to set value",
 		},
+		{
+			[]string{"--aaa", "1", "2", "ccc"},
+			&struct {
+				A bool          `opts:"-a, --aaa"`
+				D time.Duration `opts:"-d, --duration"`
+				U int           `opts:"arg:1"`
+				V int           `opts:"arg:2, default:foo"`
+				W []int         `opts:"args"`
+			}{},
+			"failed to set value",
+		},
 	}
 
 	for _, tc := range tcs {
@@ -656,8 +679,13 @@ func TestApplyArgs_NonFlagArguments_Errors(t *testing.T) {
 			optionSet, err := option.NewOptionSet(tc.cmd)
 			require.That(t, err).IsNil()
 
-			err = optionSet.ApplyArgs(tc.args)
-			require.That(t, err).ToString().Contains(tc.err)
+			err = optionSet.ApplyDefaults()
+			if err != nil {
+				require.That(t, err).ToString().Contains(tc.err)
+			} else {
+				err = optionSet.ApplyArgs(tc.args)
+				require.That(t, err).ToString().Contains(tc.err)
+			}
 		})
 	}
 }
