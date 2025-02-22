@@ -80,11 +80,17 @@ func (opts *Set) AddSpecialFlag(short, long, desc string, err error) {
 	opts.Options = append(opts.Options, opt)
 }
 
-// ApplyDefaults scans through a parsed option set and applies the values
-// defined in the environment to the fields backed by a matching environment
-// variable.
+// ApplyDefaults scans through a parsed option set and applies the corresponding
+// default values to the fields of the target struct value.
 func (opts *Set) ApplyDefaults() error {
 	for _, opt := range opts.Options {
+		if opt.Default != "" {
+			if err := opt.SetValue(opt.Default); err != nil {
+				return fmt.Errorf("while applying defaults, %w", err)
+			}
+		}
+	}
+	for _, opt := range opts.Positional {
 		if opt.Default != "" {
 			if err := opt.SetValue(opt.Default); err != nil {
 				return fmt.Errorf("while applying defaults, %w", err)
@@ -94,8 +100,9 @@ func (opts *Set) ApplyDefaults() error {
 	return nil
 }
 
-// ApplyEnv scans through a parsed option set and applies the corresponding
-// default values to the fields of the target struct value.
+// ApplyEnv scans through a parsed option set and applies the values
+// defined in the environment to the fields backed by a matching environment
+// variable.
 func (opts *Set) ApplyEnv(env map[string]string) error {
 	for _, opt := range opts.Options {
 		if opt.Env != "" {
@@ -302,7 +309,7 @@ func (opts *Set) parseStruct() error {
 	// positional as optional.
 	for i := len(opts.Positional) - 1; i >= 0; i-- {
 		arg := opts.Positional[i]
-		if arg.FieldType.Kind() == reflect.Ptr {
+		if arg.FieldType.Kind() == reflect.Ptr || arg.Default != "" {
 			arg.Optional = true
 		} else {
 			break
