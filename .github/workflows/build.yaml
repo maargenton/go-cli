@@ -41,7 +41,7 @@ jobs:
 
       - name: Archive action artifacts
         if: always() # Always run step even if other steps fail
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}-${{ matrix.go }}
           path: |
